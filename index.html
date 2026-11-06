@@ -916,7 +916,6 @@
             <div><div class="eyebrow">WRITING COMPANION</div><h1>ปรึกษานิยาย</h1><p class="subtitle">คุยเรื่องพล็อต ตัวละคร และต้นฉบับ โดยอ้างอิงข้อมูลนิยายเรื่องที่เปิดอยู่</p></div>
           </div>
           <div class="card assistant-page-card">
-            <div class="assistant-disclosure">ข้อความและสรุปข้อมูลของนิยายเรื่องนี้จะถูกส่งไปยัง TokenMe และโมเดล DeepSeek เพื่อสร้างคำตอบ · อย่าส่งข้อมูลลับหรือข้อมูลส่วนตัว</div>
             <div class="assistant-messages" id="assistant-page-messages" role="log" aria-live="polite"></div>
             <div class="assistant-status" id="assistant-page-status" role="status" aria-live="polite">กำลังตรวจสอบการเชื่อมต่อ…</div>
             <form class="assistant-compose" id="assistant-page-form">
@@ -941,7 +940,6 @@
                 <button type="button" id="assistant-close" aria-label="ปิดหน้าต่างแชต" title="ปิด">×</button>
               </div>
             </header>
-            <div class="assistant-disclosure">ส่งข้อความและข้อมูลสรุปนิยายให้ TokenMe / DeepSeek</div>
             <div class="assistant-messages" id="assistant-widget-messages" role="log" aria-live="polite"></div>
             <div class="assistant-status" id="assistant-widget-status" role="status" aria-live="polite"></div>
             <form class="assistant-compose" id="assistant-widget-form">
@@ -1513,12 +1511,12 @@
         const response=await fetch("/api/health",{headers:{Accept:"application/json"}});
         if(!response.ok)throw new Error(`HTTP ${response.status}`);
         const result=await response.json();
-        const status=result.configured?"พร้อมคุย · TokenMe / DeepSeek V4 Flash":"เว็บไซต์ทำงาน แต่ยังไม่ได้ตั้งค่า API key";
+        const status=result.configured?"พร้อมคุย":"ผู้ช่วยยังไม่พร้อมใช้งาน";
         $("#assistant-connection-label").textContent=status;
         setAssistantStatus(status);
       }catch(error){
         $("#assistant-connection-label").textContent="ยังไม่เชื่อมต่อ";
-        setAssistantStatus("เว็บไซต์ยังไม่ได้ติดตั้งส่วนแชทออนไลน์ หรือกำลังเผยแพร่เวอร์ชันใหม่");
+        setAssistantStatus("เชื่อมต่อผู้ช่วยไม่ได้ กรุณาลองใหม่ภายหลัง");
       }
     }
     async function sendAssistantMessage(input) {
@@ -1544,13 +1542,13 @@
         });
         const result=await response.json().catch(()=>({}));
         if(!response.ok)throw new Error(result.error||`ส่งข้อความไม่สำเร็จ (HTTP ${response.status})`);
-        if(typeof result.reply!=="string"||!result.reply.trim())throw new Error("TokenMe ไม่ได้ส่งคำตอบกลับมา กรุณาลองใหม่");
+        if(typeof result.reply!=="string"||!result.reply.trim())throw new Error("ผู้ช่วย AI ไม่ได้ส่งคำตอบกลับมา กรุณาลองใหม่");
         assistantChatMessages.push({role:"assistant",content:result.reply.trim()});
         saveAssistantChat();
         renderAssistantChat();
-        setAssistantStatus("คุยกับ TokenMe · ประวัติแชทบันทึกไว้ในเครื่องนี้");
+        setAssistantStatus("พร้อมช่วยคิดเรื่องนิยาย");
       }catch(error){
-        setAssistantStatus(error.message||"เชื่อมต่อไม่สำเร็จ กรุณาลองใหม่");
+        setAssistantStatus("ส่งข้อความไม่สำเร็จ กรุณาลองใหม่");
       }finally{
         assistantChatBusy=false;
         document.querySelectorAll(".assistant-compose button").forEach(button=>button.disabled=false);
