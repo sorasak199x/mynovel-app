@@ -1033,7 +1033,7 @@
     const genreCategories = [
       "แฟนตาซี","โรแมนซ์","วิทยาศาสตร์","สืบสวน","ระทึกขวัญ","สยองขวัญ",
       "ผจญภัย","แอ็กชัน","ดราม่า","คอมเมดี้","ชีวิตประจำวัน","ประวัติศาสตร์",
-      "เหนือธรรมชาติ","วรรณกรรม","เยาวชน","นิทาน"
+      "เหนือธรรมชาติ","วรรณกรรม","เยาวชน","นิทาน","ไซไฟ","เกมออนไลน์"
     ];
     const emptyChecklist = () => ({ items:[], currentId:null });
     const emptyTreatment = () => ({ premise:"", theme:"", stakes:"", ending:"", opening:"", middle:"", climax:"", subplots:"", episodes:[], timeline:[], timelines:[], activeTimelineId:null });
@@ -1409,6 +1409,8 @@
     let saveTimer;
     let pendingDeleteAction = null;
     let timelineNameBeforeEdit = "";
+    let timelineSummaryTimer = null;
+    let pendingTimelineSummary = null;
     function currentCheckinProject() {
       return workspace.projects.find(project => project.id === checkinProjectId) || workspace.projects[0] || null;
     }
@@ -1809,9 +1811,18 @@
     }
     function renderGenreCategories() {
       const selected=new Set($("#genre").value.split("·").map(genre=>genre.trim()).filter(Boolean));
-      $("#genre-category-menu").innerHTML=genreCategories.map(genre=>
-        `<button type="button" class="genre-category${selected.has(genre)?" selected":""}" role="option" data-genre-category="${escapeHTML(genre)}" aria-selected="${selected.has(genre)}">${escapeHTML(genre)}<span class="genre-category-check" aria-hidden="true">${selected.has(genre)?"✓":""}</span></button>`
-      ).join("");
+      const menu=$("#genre-category-menu");
+      if(!menu.hasChildNodes()){
+        menu.innerHTML=genreCategories.map(genre=>
+          `<button type="button" class="genre-category" role="option" data-genre-category="${escapeHTML(genre)}" aria-selected="false">${escapeHTML(genre)}<span class="genre-category-check" aria-hidden="true"></span></button>`
+        ).join("");
+      }
+      menu.querySelectorAll("[data-genre-category]").forEach(button=>{
+        const isSelected=selected.has(button.dataset.genreCategory);
+        button.classList.toggle("selected",isSelected);
+        button.setAttribute("aria-selected",String(isSelected));
+        button.querySelector(".genre-category-check").textContent=isSelected?"✓":"";
+      });
     }
     function renderChecklist() {
       if (!data) return;
@@ -4548,7 +4559,7 @@
     $("#treatment-list").addEventListener("keydown",event=>{
       const option=event.target.closest(".treatment-time-suggestion");
       if(option){
-        const options=[...option.closest(".treatment-time-suggestions").querySelectorAll(".treatment-time-suggestion")];
+        const options=[...option.closest(".treatment-time-suggestions").querySelectorAll(".treatment-time-suggestion:not([hidden])")];
         const index=options.indexOf(option);
         if(event.key==="ArrowDown"){
           event.preventDefault();
@@ -4569,7 +4580,7 @@
         event.preventDefault();
         const episode=data.treatment.episodes.find(item=>item.id===input.dataset.treatmentEpisodeId);
         if(episode)renderTreatmentTimeSuggestions(episode,input,true);
-        input.closest(".treatment-time-control")?.querySelector(".treatment-time-suggestion")?.focus();
+        input.closest(".treatment-time-control")?.querySelector(".treatment-time-suggestion:not([hidden])")?.focus();
       }else if(event.key==="Escape"){
         input.closest(".treatment-time-suggestions")?.classList.remove("open");
         input.setAttribute("aria-expanded","false");
@@ -4750,6 +4761,9 @@
     }
     function renderTimeline() {
       if (!data) return;
+      if(timelineSummaryTimer!==null)window.clearTimeout(timelineSummaryTimer);
+      timelineSummaryTimer=null;
+      pendingTimelineSummary=null;
       const timelines=data.treatment.timelines;
       if(!timelines.length)timelines.push({id:`timeline-${Date.now()}-main`,name:"ไทม์ไลน์หลัก",events:[]});
       if(!timelines.some(item=>item.id===data.treatment.activeTimelineId))data.treatment.activeTimelineId=timelines[0].id;
@@ -4795,15 +4809,26 @@
       renderTimelineSummary(timeline,events);
     }
     function renderTimelineEraOptions(timeline,events,forceOpen=false,targetInput=null) {
-      const values=[...new Set(events.map(item=>(item.era||"").trim()).filter(Boolean))];
       const inputs=targetInput?[targetInput]:$("#timeline-list").querySelectorAll(".timeline-era-input");
       inputs.forEach(input=>{
+        const eventIndex=Number(input.dataset.eventIndex);
+        const values=[...new Set(events.filter((item,index)=>index!==eventIndex).map(item=>(item.era||"").trim()).filter(Boolean))];
         const query=input.value.trim().toLocaleLowerCase();
-        const matches=values.filter(value=>value.toLocaleLowerCase().includes(query));
         const panel=input.closest(".treatment-time-control").querySelector(".treatment-time-suggestions");
-        panel.innerHTML=matches.length?matches.map(value=>
-          `<button type="button" class="treatment-time-suggestion" role="option" data-timeline-era-option data-era-value="${escapeHTML(value)}">${escapeHTML(value)}</button>`
-        ).join(""):`<div class="treatment-time-suggestion-empty">${values.length?"ไม่พบช่วงเวลาที่ตรงกัน":"ยังไม่มีช่วงเวลาที่เคยใช้"}</div>`;
+        const options=[...panel.querySelectorAll("[data-timeline-era-option]")];
+        if(!panel.querySelector(".treatment-time-suggestion-empty")||options.length!==values.length||options.some((option,index)=>option.dataset.eraValue!==values[index])){
+          panel.innerHTML=`${values.map(value=>
+            `<button type="button" class="treatment-time-suggestion" role="option" data-timeline-era-option data-era-value="${escapeHTML(value)}">${escapeHTML(value)}</button>`
+          ).join("")}<div class="treatment-time-suggestion-empty"></div>`;
+        }
+        let matchCount=0;
+        panel.querySelectorAll("[data-timeline-era-option]").forEach(option=>{
+          option.hidden=!option.dataset.eraValue.toLocaleLowerCase().includes(query);
+          if(!option.hidden)matchCount++;
+        });
+        const empty=panel.querySelector(".treatment-time-suggestion-empty");
+        empty.hidden=matchCount>0;
+        empty.textContent=values.length?"ไม่พบช่วงเวลาที่ตรงกัน":"ยังไม่มีช่วงเวลาที่เคยใช้";
         const isOpen=forceOpen||document.activeElement===input;
         panel.classList.toggle("open",isOpen);
         input.setAttribute("aria-expanded",String(isOpen));
@@ -4842,6 +4867,32 @@
         </div>`;
       }).join("");
     }
+    function scheduleTimelineSummary(timeline,events) {
+      if(!pendingTimelineSummary||pendingTimelineSummary.timeline!==timeline||pendingTimelineSummary.events!==events){
+        pendingTimelineSummary={timeline,events,refreshAll:false,dateIndexes:new Set()};
+      }
+      pendingTimelineSummary.refreshAll=true;
+      if(timelineSummaryTimer!==null)window.clearTimeout(timelineSummaryTimer);
+      timelineSummaryTimer=window.setTimeout(flushTimelineSummary,120);
+    }
+    function scheduleTimelineDateSummary(timeline,events,index) {
+      if(!pendingTimelineSummary||pendingTimelineSummary.timeline!==timeline||pendingTimelineSummary.events!==events){
+        pendingTimelineSummary={timeline,events,refreshAll:false,dateIndexes:new Set()};
+      }
+      pendingTimelineSummary.dateIndexes.add(index);
+      if(timelineSummaryTimer!==null)window.clearTimeout(timelineSummaryTimer);
+      timelineSummaryTimer=window.setTimeout(flushTimelineSummary,120);
+    }
+    function flushTimelineSummary() {
+      if(timelineSummaryTimer!==null)window.clearTimeout(timelineSummaryTimer);
+      timelineSummaryTimer=null;
+      const pending=pendingTimelineSummary;
+      pendingTimelineSummary=null;
+      if(pending&&data&&currentTimeline()===pending.timeline&&pending.timeline.events===pending.events){
+        if(pending.refreshAll)renderTimelineSummary(pending.timeline,pending.events);
+        else pending.dateIndexes.forEach(index=>updateTimelineDateSummary(pending.events[index],index,pending.events));
+      }
+    }
     function timelineEventSummary(details) {
       const description=(details||"").trim();
       if(!description)return "ยังไม่มีรายละเอียด";
@@ -4860,6 +4911,22 @@
       if(!item)return;
       item.querySelector(".timeline-summary-detail").textContent=summary;
       item.setAttribute("aria-label",`เหตุการณ์ที่ ${index+1}: ${summary} วันที่ ${event.date||"ยังไม่ระบุวันที่"}`);
+    }
+    function updateTimelineDateSummary(event,index,events) {
+      const summaryItem=$("#timeline-summary").querySelector(`[data-summary-event-index="${index}"]`);
+      if(!summaryItem)return;
+      const date=event.date||"ยังไม่ระบุวันที่";
+      summaryItem.querySelector(".timeline-summary-date").textContent=date;
+      summaryItem.setAttribute("aria-label",`เหตุการณ์ที่ ${index+1}: ${summaryItem.querySelector(".timeline-summary-detail").textContent} วันที่ ${date}`);
+      const group=summaryItem.closest(".timeline-summary-group");
+      const eraHeader=group?.querySelector(".timeline-summary-era.has-era .timeline-summary-era-range");
+      if(!eraHeader)return;
+      const dates=[...group.querySelectorAll("[data-summary-event-index]")]
+        .map(item=>events[Number(item.dataset.summaryEventIndex)]?.date?.trim()||"")
+        .filter(Boolean);
+      const firstDate=dates[0]||"";
+      const lastDate=dates[dates.length-1]||"";
+      eraHeader.textContent=firstDate&&lastDate&&firstDate!==lastDate?`${firstDate} – ${lastDate}`:firstDate;
     }
     $("#timeline-summary").addEventListener("click",event=>{
       const item=event.target.closest("[data-summary-event-id]");
@@ -4963,7 +5030,8 @@
       item[input.dataset.eventKey] = input.value;
       save();
       if(input.dataset.eventKey==="details")updateTimelineEventSummary(item,eventIndex);
-      else if(input.dataset.eventKey==="date"||input.dataset.eventKey==="era")renderTimelineSummary(timeline,timeline.events);
+      else if(input.dataset.eventKey==="date")scheduleTimelineDateSummary(timeline,timeline.events,eventIndex);
+      else if(input.dataset.eventKey==="era")scheduleTimelineSummary(timeline,timeline.events);
       if(input.dataset.eventKey==="era")renderTimelineEraOptions(timeline,timeline.events,false,input);
     });
     $("#timeline-list").addEventListener("focusin",event=>{
@@ -4971,11 +5039,16 @@
       if(input&&data)renderTimelineEraOptions(currentTimeline(),currentTimeline().events,true,input);
     });
     $("#timeline-list").addEventListener("focusout",event=>{
-      const input=event.target.closest(".timeline-era-input");
+      const input=event.target.closest('[data-event-key="date"],.timeline-era-input');
       if(!input)return;
       window.setTimeout(()=>{
+        if(input.dataset.eventKey==="date"){
+          flushTimelineSummary();
+          return;
+        }
         const control=input.closest(".treatment-time-control");
         if(control.contains(document.activeElement))return;
+        flushTimelineSummary();
         control.querySelector(".treatment-time-suggestions").classList.remove("open");
         input.setAttribute("aria-expanded","false");
         control.querySelector(".treatment-time-toggle").setAttribute("aria-expanded","false");
@@ -4984,7 +5057,7 @@
     $("#timeline-list").addEventListener("keydown",event=>{
       const option=event.target.closest("[data-timeline-era-option]");
       if(option){
-        const options=[...option.closest(".treatment-time-suggestions").querySelectorAll("[data-timeline-era-option]")];
+        const options=[...option.closest(".treatment-time-suggestions").querySelectorAll("[data-timeline-era-option]:not([hidden])")];
         const index=options.indexOf(option);
         if(event.key==="ArrowDown"){
           event.preventDefault();
@@ -5010,7 +5083,7 @@
       if(event.key==="ArrowDown"){
         event.preventDefault();
         if(!panel.classList.contains("open"))renderTimelineEraOptions(currentTimeline(),currentTimeline().events,true,input);
-        panel.querySelector(".treatment-time-suggestion")?.focus();
+        panel.querySelector(".treatment-time-suggestion:not([hidden])")?.focus();
       }else if(event.key==="Escape"&&panel.classList.contains("open")){
         event.preventDefault();
         panel.classList.remove("open");
