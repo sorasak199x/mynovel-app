@@ -443,6 +443,8 @@
     .timeline-card textarea:focus, .timeline-date-fields input:focus { border-color:#9eaf82; }
     .timeline-item-actions { display:flex; flex-direction:column; align-items:stretch; align-self:start; gap:6px; grid-column:4; grid-row:1; }
     .timeline-empty { border:1px dashed #495048; border-radius:12px; padding:40px 20px; text-align:center; color:var(--muted); }
+    .timeline-add-more { position:sticky; bottom:12px; z-index:12; display:flex; justify-content:flex-end; margin-top:6px; padding:10px 0; background:linear-gradient(transparent,var(--bg) 35%); pointer-events:none; }
+    .timeline-add-more .button { pointer-events:auto; box-shadow:0 6px 20px #0007; }
     .timeline-overview { border:1px solid var(--line); background:var(--panel); border-radius:var(--radius); padding:17px 18px 13px; margin-bottom:18px; }
     .timeline-overview-heading { display:flex; align-items:baseline; gap:9px; margin-bottom:11px; }
     .timeline-overview-heading h2 { margin:0; font-size:13px; font-weight:650; }
@@ -895,6 +897,9 @@
             </div>
           </section>
           <div class="timeline-list" id="timeline-list"></div>
+          <div class="timeline-add-more">
+            <button type="button" class="button primary" id="add-event-bottom">＋ เพิ่มเหตุการณ์</button>
+          </div>
         </section>
         <section class="page" id="chapters">
           <div class="page-heading">
@@ -5145,12 +5150,14 @@
       }
       if (deleteButton || moveButton) { save(); renderTimeline(); }
     });
-    $("#add-event").addEventListener("click", () => {
+    function addTimelineEvent() {
       if (!data) return;
       currentTimeline().events.push({ id:`event-${Date.now()}-${Math.random().toString(36).slice(2,7)}`, date:"", era:"", when:"", title:"", cast:"", details:"", notes:"", treatmentEpisodeIds:[] });
       save(); renderTimeline();
       $("#timeline-list .timeline-item:last-child textarea[data-event-key='details']")?.focus();
-    });
+    }
+    $("#add-event").addEventListener("click",addTimelineEvent);
+    $("#add-event-bottom").addEventListener("click",addTimelineEvent);
     const characterDialog = $("#character-dialog");
     const characterColorPicker = $("#character-color-picker");
     function renderCharacterColorPicker(selectedColor) {
