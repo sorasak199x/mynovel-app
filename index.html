@@ -1484,42 +1484,127 @@
         if(status)status.textContent=message;
       });
     }
-    function makeAssistantNovelContext() {
-      if(!data)return "";
+    function makeAssistantMemories(question) {
+      if(!data)return {longTermMemory:"",storyMemory:"",conversationMemory:{history:[],currentTask:question}};
       const clean=value=>typeof value==="string"?value.trim():"";
-      const parts=[
+      const formatSections=sections=>{
+        const parts=[];
+        const addSection=(label,lines)=>{
+        const content=lines.map(clean).filter(Boolean).join("\n");
+        if(content)parts.push(`${label}:\n${content}`);
+        };
+        sections(addSection);
+        return parts.join("\n\n");
+      };
+      const longTermMemory=formatSections(addSection=>{
+        addSection("ข้อมูลนิยาย",[
         `ชื่อเรื่อง: ${clean(data.title)||"ยังไม่ได้ตั้งชื่อ"}`,
         `แนวเรื่อง: ${clean(data.genre)||"ยังไม่ได้ระบุ"}`,
         `สถานะ: ${clean(data.status)||"ยังไม่ได้ระบุ"}`,
         `คำโปรย: ${clean(data.tagline)||"ไม่มีข้อมูล"}`,
-        `เรื่องย่อ/แก่นเรื่อง: ${clean(data.synopsis)||"ไม่มีข้อมูล"}`
-      ];
-      const worldSections=(data.worldbuilding?.customSections||[]).map(section=>{
-        const details=(section.details||[]).map(detail=>`${clean(detail.title)}: ${clean(detail.content)}`).filter(value=>value!==":").join("\n");
-        return [clean(section.title),clean(section.content),details].filter(Boolean).join("\n");
-      }).filter(Boolean).slice(0,20);
-      if(worldSections.length)parts.push(`ข้อมูลโลก:\n${worldSections.join("\n\n")}`.slice(0,3800));
-      const characters=(data.characters||[]).slice(0,40).map(person=>{
+        `เรื่องย่อ/แก่นเรื่อง: ${clean(data.synopsis)}`,
+        `โลก: ${clean(data.world)}`,
+        `ยุคสมัย: ${clean(data.era)}`,
+        `สถานที่: ${clean(data.place)}`
+        ]);
+        const worldSections=(data.worldbuilding?.customSections||[]).map(section=>{
+          const details=(section.details||[]).map(detail=>`${clean(detail.title)}: ${clean(detail.content)}`).filter(value=>value!==":").join("\n");
+          return [clean(section.title),clean(section.content),details].filter(Boolean).join("\n");
+        }).filter(Boolean);
+        addSection("ข้อมูลโลกและกฎของจักรวาล",worldSections);
+        const characters=(data.characters||[]).map(person=>{
         const fields=(person.customFields||[]).map(field=>{
           const label=data.characterFieldDefinitions?.find(item=>item.id===field.fieldId)?.label||"รายละเอียด";
           return `${label}: ${clean(field.value)}`;
         }).filter(value=>!value.endsWith(": "));
-        return [clean(person.name),clean(person.role),clean(person.group),clean(person.details),...fields].filter(Boolean).join(" · ");
-      }).filter(Boolean);
-      if(characters.length)parts.push(`ตัวละคร:\n${characters.join("\n")}`.slice(0,3500));
-      const treatment=data.treatment||{};
-      const treatmentNotes=["premise","theme","stakes","ending","opening","middle","climax","subplots"]
-        .map(key=>treatment[key]?`${key}: ${clean(treatment[key])}`:"").filter(Boolean);
-      (treatment.episodes||[]).slice(0,18).forEach((episode,index)=>{
-        const details=[episode.title,episode.timeSpan,episode.details,episode.notes].map(clean).filter(Boolean).join(" · ");
-        if(details)treatmentNotes.push(`ช่วง ${index+1}: ${details}`);
+        return [
+          `ตัวละคร: ${clean(person.name)||"ไม่มีชื่อ"}`,
+          `บทบาท: ${clean(person.role)}`,
+          `กลุ่ม: ${clean(person.group)}`,
+          `เพศ: ${clean(person.sex)}`,
+          `รายละเอียด: ${clean(person.details)}`,
+          `ปรากฏตัวครั้งแรก: ${clean(person.firstAppearance)}`,
+          `หมายเหตุและข้อมูลเพิ่มเติม: ${fields.join(" · ")}`
+        ].filter(value=>!value.endsWith(": ")).join("\n");
+        });
+        addSection("ตัวละครทั้งหมด",characters);
+        const characterMaps=(data.characterMaps||[]).map(map=>{
+        const edges=(map.edges||[]).map(edge=>{
+          const from=data.characters.find(person=>person.id===edge.from)?.name||"ไม่ทราบตัวละคร";
+          const to=data.characters.find(person=>person.id===edge.to)?.name||"ไม่ทราบตัวละคร";
+          return `${from} → ${to}${clean(edge.label)?` (${clean(edge.label)})`:""}${clean(edge.details)?`: ${clean(edge.details)}`:""}`;
+        });
+        return [`แผนผัง: ${clean(map.name)}`,`รายละเอียด: ${clean(map.description)}`,`ความสัมพันธ์:\n${edges.join("\n")}`].filter(value=>!value.endsWith(":\n")).join("\n");
+        });
+        addSection("แผนผังและความสัมพันธ์ตัวละคร",characterMaps);
+        const maps=(data.maps?.items||[]).map(map=>[
+          `แผนที่: ${clean(map.name)}`,
+          `รายละเอียดแผนที่: ${clean(map.description)}`,
+          ...(map.objects||[]).filter(item=>[item.name,item.description,item.history,item.significance,item.routes,item.secrets,item.region,item.governance].some(value=>clean(value))).map(item=>[
+            `${clean(item.name)||"สถานที่ไม่มีชื่อ"} (${clean(item.type)||clean(item.kind)})`,
+            `ภูมิภาค: ${clean(item.region)}`,
+            `ผู้ปกครอง: ${clean(item.governance)}`,
+            `ประวัติ: ${clean(item.history)}`,
+            `ความสำคัญ: ${clean(item.significance)}`,
+            `เส้นทาง: ${clean(item.routes)}`,
+            `รายละเอียด: ${clean(item.description)}`,
+            `ความลับ: ${clean(item.secrets)}`
+          ].filter(value=>!value.endsWith(": ")).join("\n"))
+        ].join("\n"));
+        addSection("สถานที่และข้อมูลแผนที่",maps);
       });
-      if(treatmentNotes.length)parts.push(`ทรีตเมนต์:\n${treatmentNotes.join("\n")}`.slice(0,3800));
-      const chapters=(data.chapters||[]).filter(chapter=>clean(chapter.content)).slice(-3).map((chapter,index)=>
-        `${chapter.title||`ตอน ${index+1}`}:\n${clean(chapter.content).slice(0,1600)}`
+      const storyMemory=formatSections(addSection=>{
+      const treatment=data.treatment||{};
+      addSection("ทรีตเมนต์และโครงเรื่อง",[
+        `Premise: ${clean(treatment.premise)}`,
+        `ธีม: ${clean(treatment.theme)}`,
+        `เดิมพัน: ${clean(treatment.stakes)}`,
+        `ตอนจบ: ${clean(treatment.ending)}`,
+        `ฉากเปิด: ${clean(treatment.opening)}`,
+        `ช่วงกลาง: ${clean(treatment.middle)}`,
+        `จุดไคลแมกซ์: ${clean(treatment.climax)}`,
+        `เส้นเรื่องย่อย: ${clean(treatment.subplots)}`,
+        ...(treatment.episodes||[]).map((episode,index)=>[
+          `ตอนทรีตเมนต์ ${index+1}: ${clean(episode.title)}`,
+          `ช่วงเวลา: ${clean(episode.timeSpan)}`,
+          `รายละเอียด: ${clean(episode.details)}`,
+          `หมายเหตุ: ${clean(episode.notes)}`
+        ].join("\n"))
+      ]);
+      const timelines=(treatment.timelines||[]).map(timeline=>[
+        `ไทม์ไลน์: ${clean(timeline.name)}`,
+        ...(timeline.events||[]).map((item,index)=>[
+          `เหตุการณ์ ${index+1}: วันที่ ${clean(item.date)} · ช่วงเวลา ${clean(item.era)}`,
+          `รายละเอียด: ${clean(item.details)}`,
+          `หมายเหตุ: ${clean(item.notes)}`
+        ].join("\n"))
+      ].join("\n"));
+      addSection("ไทม์ไลน์ทุกชุด",timelines);
+      const chapters=(data.chapters||[]).map((chapter,index)=>[
+        `ตอนที่ ${index+1}: ${clean(chapter.title)||`ตอนที่ ${index+1}`}`,
+        clean(chapter.content)
+      ].join("\n"));
+      addSection("ต้นฉบับทุกบท (ครบทุกบทที่บันทึก)",chapters);
+      const checklist=(data.checklist?.items||[]).map((item,index)=>
+        `${index+1}. ${clean(item.title)}${item.done?" (เสร็จแล้ว)":""}`
       );
-      if(chapters.length)parts.push(`เนื้อหาตอนล่าสุด:\n${chapters.join("\n\n")}`.slice(0,4500));
-      return parts.join("\n\n").slice(0,12000);
+      addSection("เช็กลิสต์ความคืบหน้า",checklist);
+      const checkins=Object.entries(data.checkins||{}).map(([date,entry])=>[
+        `${date}: ตอน ${data.chapters.find(chapter=>chapter.id===entry.chapterId)?.title||"ไม่ระบุ"}`,
+        `จำนวนคำ: ${clean(String(entry.words||""))}`,
+        `สถานะ: ${clean(entry.mood)}`,
+        `บันทึก: ${clean(entry.notes)}`
+      ].join("\n"));
+      addSection("บันทึกความคืบหน้ารายวัน",checkins);
+      });
+      return {
+        longTermMemory,
+        storyMemory,
+        conversationMemory:{
+          history:assistantChatMessages.slice(-11,-1),
+          currentTask:question
+        }
+      };
     }
     async function checkAssistantConnection() {
       try{
@@ -1544,15 +1629,14 @@
       document.querySelectorAll("#assistant-page-input,#assistant-widget-input").forEach(field=>field.value="");
       assistantChatBusy=true;
       document.querySelectorAll(".assistant-compose button").forEach(button=>button.disabled=true);
-      setAssistantStatus("กำลังคิดคำตอบ…");
+      setAssistantStatus("กำลังอ่านความทรงจำทั้ง 3 ชั้นและวิเคราะห์คำตอบ…");
       try{
         const response=await fetch("/api/chat",{
           method:"POST",
           headers:{"Content-Type":"application/json","Accept":"application/json"},
           body:JSON.stringify({
             message:question,
-            history:assistantChatMessages.slice(-11,-1),
-            context:makeAssistantNovelContext()
+            memories:makeAssistantMemories(question)
           })
         });
         const result=await response.json().catch(()=>({}));
@@ -1563,7 +1647,8 @@
         renderAssistantChat();
         setAssistantStatus("พร้อมช่วยคิดเรื่องนิยาย");
       }catch(error){
-        setAssistantStatus("ส่งข้อความไม่สำเร็จ กรุณาลองใหม่");
+        console.error("Could not send assistant message:",error);
+        setAssistantStatus(error.message||"ส่งข้อความไม่สำเร็จ กรุณาลองใหม่");
       }finally{
         assistantChatBusy=false;
         document.querySelectorAll(".assistant-compose button").forEach(button=>button.disabled=false);
