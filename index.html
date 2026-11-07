@@ -1756,7 +1756,7 @@
       selects.forEach(refreshCustomSelect);
     });
     customSelectObserver.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:["hidden","disabled"]});
-    function save() {
+    function save(delay=250) {
       clearTimeout(saveTimer);
       if (data) $("#save-label").textContent = "กำลังบันทึก…";
       saveTimer = setTimeout(() => {
@@ -1767,7 +1767,7 @@
           console.error("Could not save novel workspace:", error);
           if (data) $("#save-label").textContent = "บันทึกไม่สำเร็จ";
         }
-      }, 250);
+      }, delay);
     }
     const deleteConfirmDialog=$("#delete-confirm-dialog");
     function requestDeleteConfirmation(message,action,title="ยืนยันการลบ",confirmLabel="ยืนยันการลบ") {
@@ -4810,7 +4810,6 @@
         </article>`).join("") : `<div class="timeline-empty">ยังไม่มีเหตุการณ์ในเรื่อง<br>เพิ่มจุดเริ่มต้น จุดพลิกผัน หรือเหตุการณ์สำคัญเพื่อวางลำดับเรื่อง</div>`;
       $("#timeline-list").querySelectorAll('[data-event-key="details"]').forEach((textarea,index)=>{textarea.value=events[index].details;});
       $("#timeline-list").querySelectorAll('[data-event-key="notes"]').forEach((textarea,index)=>{textarea.value=events[index].notes||"";});
-      renderTimelineEraOptions(timeline,events);
       renderTimelineSummary(timeline,events);
     }
     function renderTimelineEraOptions(timeline,events,forceOpen=false,targetInput=null) {
@@ -4818,7 +4817,6 @@
       inputs.forEach(input=>{
         const eventIndex=Number(input.dataset.eventIndex);
         const values=[...new Set(events.filter((item,index)=>index!==eventIndex).map(item=>(item.era||"").trim()).filter(Boolean))];
-        const query=input.value.trim().toLocaleLowerCase();
         const panel=input.closest(".treatment-time-control").querySelector(".treatment-time-suggestions");
         const options=[...panel.querySelectorAll("[data-timeline-era-option]")];
         if(!panel.querySelector(".treatment-time-suggestion-empty")||options.length!==values.length||options.some((option,index)=>option.dataset.eraValue!==values[index])){
@@ -4826,19 +4824,27 @@
             `<button type="button" class="treatment-time-suggestion" role="option" data-timeline-era-option data-era-value="${escapeHTML(value)}">${escapeHTML(value)}</button>`
           ).join("")}<div class="treatment-time-suggestion-empty"></div>`;
         }
-        let matchCount=0;
-        panel.querySelectorAll("[data-timeline-era-option]").forEach(option=>{
-          option.hidden=!option.dataset.eraValue.toLocaleLowerCase().includes(query);
-          if(!option.hidden)matchCount++;
-        });
-        const empty=panel.querySelector(".treatment-time-suggestion-empty");
-        empty.hidden=matchCount>0;
-        empty.textContent=values.length?"ไม่พบช่วงเวลาที่ตรงกัน":"ยังไม่มีช่วงเวลาที่เคยใช้";
+        filterTimelineEraOptions(input);
         const isOpen=forceOpen||document.activeElement===input;
         panel.classList.toggle("open",isOpen);
         input.setAttribute("aria-expanded",String(isOpen));
         input.closest(".treatment-time-control").querySelector(".treatment-time-toggle").setAttribute("aria-expanded",String(isOpen));
       });
+    }
+    function filterTimelineEraOptions(input) {
+      const query=input.value.trim().toLocaleLowerCase();
+      const panel=input.closest(".treatment-time-control").querySelector(".treatment-time-suggestions");
+      const options=panel.querySelectorAll("[data-timeline-era-option]");
+      let matchCount=0;
+      options.forEach(option=>{
+        option.hidden=!option.dataset.eraValue.toLocaleLowerCase().includes(query);
+        if(!option.hidden)matchCount++;
+      });
+      const empty=panel.querySelector(".treatment-time-suggestion-empty");
+      if(empty){
+        empty.hidden=matchCount>0;
+        empty.textContent=options.length?"ไม่พบช่วงเวลาที่ตรงกัน":"ยังไม่มีช่วงเวลาที่เคยใช้";
+      }
     }
     function renderTimelineSummary(timeline,events) {
       if(!events.length){
@@ -4878,7 +4884,7 @@
       }
       pendingTimelineSummary.refreshAll=true;
       if(timelineSummaryTimer!==null)window.clearTimeout(timelineSummaryTimer);
-      timelineSummaryTimer=window.setTimeout(flushTimelineSummary,120);
+      timelineSummaryTimer=window.setTimeout(flushTimelineSummary,300);
     }
     function scheduleTimelineDateSummary(timeline,events,index) {
       if(!pendingTimelineSummary||pendingTimelineSummary.timeline!==timeline||pendingTimelineSummary.events!==events){
@@ -4886,7 +4892,7 @@
       }
       pendingTimelineSummary.dateIndexes.add(index);
       if(timelineSummaryTimer!==null)window.clearTimeout(timelineSummaryTimer);
-      timelineSummaryTimer=window.setTimeout(flushTimelineSummary,120);
+      timelineSummaryTimer=window.setTimeout(flushTimelineSummary,150);
     }
     function flushTimelineSummary() {
       if(timelineSummaryTimer!==null)window.clearTimeout(timelineSummaryTimer);
@@ -5033,30 +5039,29 @@
       const item=timeline.events[eventIndex];
       if(!item)return;
       item[input.dataset.eventKey] = input.value;
-      save();
+      save(800);
       if(input.dataset.eventKey==="details")updateTimelineEventSummary(item,eventIndex);
       else if(input.dataset.eventKey==="date")scheduleTimelineDateSummary(timeline,timeline.events,eventIndex);
       else if(input.dataset.eventKey==="era")scheduleTimelineSummary(timeline,timeline.events);
-      if(input.dataset.eventKey==="era")renderTimelineEraOptions(timeline,timeline.events,false,input);
+      if(input.dataset.eventKey==="era")filterTimelineEraOptions(input);
     });
     $("#timeline-list").addEventListener("focusin",event=>{
       const input=event.target.closest(".timeline-era-input");
       if(input&&data)renderTimelineEraOptions(currentTimeline(),currentTimeline().events,true,input);
     });
     $("#timeline-list").addEventListener("focusout",event=>{
-      const input=event.target.closest('[data-event-key="date"],.timeline-era-input');
+      const input=event.target.closest("[data-event-index]");
       if(!input)return;
       window.setTimeout(()=>{
-        if(input.dataset.eventKey==="date"){
-          flushTimelineSummary();
-          return;
-        }
-        const control=input.closest(".treatment-time-control");
-        if(control.contains(document.activeElement))return;
+        const control=input.dataset.eventKey==="era"?input.closest(".treatment-time-control"):null;
+        if(control?.contains(document.activeElement))return;
         flushTimelineSummary();
-        control.querySelector(".treatment-time-suggestions").classList.remove("open");
-        input.setAttribute("aria-expanded","false");
-        control.querySelector(".treatment-time-toggle").setAttribute("aria-expanded","false");
+        save();
+        if(control){
+          control.querySelector(".treatment-time-suggestions").classList.remove("open");
+          input.setAttribute("aria-expanded","false");
+          control.querySelector(".treatment-time-toggle").setAttribute("aria-expanded","false");
+        }
       },120);
     });
     $("#timeline-list").addEventListener("keydown",event=>{
@@ -5112,7 +5117,7 @@
           toggle.setAttribute("aria-expanded","false");
         }else{
           input.focus();
-          renderTimelineEraOptions(currentTimeline(),currentTimeline().events);
+          renderTimelineEraOptions(currentTimeline(),currentTimeline().events,true,input);
         }
         return;
       }
