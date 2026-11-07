@@ -274,6 +274,8 @@
     .quick-card p { color:var(--muted); font-size:12px; margin:0; }
     .quick-icon { width:40px; height:40px; border-radius:12px; display:grid; place-items:center; color:var(--lavender); background:#383341; font-size:18px; }
     .character-toolbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; gap:12px; flex-wrap:wrap; }
+    .character-add-more { position:sticky; bottom:12px; z-index:12; display:flex; justify-content:flex-end; margin-top:6px; padding:10px 0; background:linear-gradient(transparent,var(--bg) 35%); pointer-events:none; }
+    .character-add-more .button { pointer-events:auto; box-shadow:0 6px 20px #0007; }
     .board {
       height:calc(100vh - 160px); min-height:660px; max-height:1200px; border:1px solid var(--line); border-radius:var(--radius);
       background-color:#242825; background-image:radial-gradient(#414741 1px, transparent 1px); background-size:20px 20px; overflow:hidden; position:relative; padding:0; touch-action:none;
@@ -719,6 +721,9 @@
           <div class="group-legend" id="group-legend"></div>
           <div class="board" id="character-board"></div>
           <p style="font-size:11px;color:var(--muted);margin:12px 2px">ลากตัวละครเพื่อจัดตำแหน่ง · กด “ความสัมพันธ์” แล้วเลือกต้นทางและปลายทาง · ลากจากจุดใดก็ได้บนเส้นเพื่อดัดโค้ง (คลิกเพื่อแก้รายละเอียด) · ลากพื้นหลังเพื่อเลื่อนและใช้ล้อเมาส์/ปุ่มเพื่อซูม</p>
+          <div class="character-add-more">
+            <button type="button" class="button primary" id="add-character-bottom">＋ เพิ่มตัวละคร</button>
+          </div>
         </section>
         <section class="page" id="character-info">
           <div class="page-heading">
@@ -726,6 +731,9 @@
             <div class="heading-actions"><button type="button" class="button primary" id="add-character-record">＋ เพิ่มตัวละคร</button></div>
           </div>
           <div class="character-record-list" id="character-record-list"></div>
+          <div class="character-add-more">
+            <button type="button" class="button primary" id="add-character-record-bottom">＋ เพิ่มตัวละคร</button>
+          </div>
         </section>
         <section class="page" id="worldbuilding">
           <div class="page-heading">
@@ -2979,7 +2987,10 @@
     $("#library-link").addEventListener("click", () => { data = null; workspace.activeProjectId = null; showPage("library"); });
     $("#crumb-library").addEventListener("click", () => { data = null; workspace.activeProjectId = null; showPage("library"); });
     document.querySelectorAll("#project-nav [data-page], [data-goto]").forEach(button => button.addEventListener("click", () => showPage(button.dataset.page || button.dataset.goto)));
-    $("#add-character-record").addEventListener("click",()=>openCharacter());
+    const addCharacter=()=>openCharacter();
+    $("#add-character-record").addEventListener("click",addCharacter);
+    $("#add-character-bottom").addEventListener("click",addCharacter);
+    $("#add-character-record-bottom").addEventListener("click",addCharacter);
     $("#character-record-list").addEventListener("input",event=>{
       const input=event.target.closest("[data-character-record-id][data-character-field]");
       if(!input||!data)return;
@@ -5189,7 +5200,7 @@
       characterDialog.showModal();
       $("#character-name").focus();
     }
-    $("#add-character").addEventListener("click", () => openCharacter());
+    $("#add-character").addEventListener("click", addCharacter);
     $("#close-dialog").addEventListener("click", () => characterDialog.close());
     $("#cancel-dialog").addEventListener("click", () => characterDialog.close());
     $("#open-character-record").addEventListener("click",()=>{
