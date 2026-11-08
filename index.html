@@ -1568,6 +1568,14 @@
         if(status)status.textContent=message;
       });
     }
+    function assistantHistoryForRequest() {
+      return assistantChatMessages.slice(-11,-1)
+        .filter(message=>message&&["user","assistant"].includes(message.role)&&typeof message.content==="string")
+        .map(({role,content})=>({
+          role,
+          content:content.length>4_000?`${content.slice(0,3_970)}\n[ตัดข้อความส่วนที่เหลือ]`:content
+        }));
+    }
     function makeAssistantMemories(question) {
       if(!data)return {longTermMemory:"",storyMemory:"",conversationMemory:{history:[],currentTask:question}};
       const clean=value=>typeof value==="string"?value.trim():"";
@@ -1685,22 +1693,36 @@
         longTermMemory,
         storyMemory,
         conversationMemory:{
-          history:assistantChatMessages.slice(-11,-1),
+          history:assistantHistoryForRequest(),
           currentTask:question
         }
       };
     }
+    async function readAssistantApiResponse(response) {
+      const contentType=response.headers.get("content-type")||"";
+      if(!contentType.toLowerCase().includes("application/json")){
+        if(response.status===404||contentType.toLowerCase().includes("text/html")){
+          throw new Error("เว็บไซต์นี้ไม่มี API สำหรับแชท กรุณาเผยแพร่ผ่าน Cloudflare Pages โดยให้โฟลเดอร์ functions อยู่ระดับเดียวกับ index.html (GitHub Pages ใช้ API นี้ไม่ได้)");
+        }
+        throw new Error(`เซิร์ฟเวอร์ API ส่งข้อมูลกลับมาในรูปแบบที่ไม่รองรับ (HTTP ${response.status})`);
+      }
+      const result=await response.json();
+      if(!response.ok)throw new Error(result.error||`คำขอไม่สำเร็จ (HTTP ${response.status})`);
+      return result;
+    }
     async function checkAssistantConnection() {
       try{
         const response=await fetch("/api/health",{headers:{Accept:"application/json"}});
-        if(!response.ok)throw new Error(`HTTP ${response.status}`);
-        const result=await response.json();
-        const status=result.configured?"พร้อมคุย":"ผู้ช่วยยังไม่พร้อมใช้งาน";
+        const result=await readAssistantApiResponse(response);
+        const status=result.configured
+          ?"พร้อมคุย"
+          :"ยังไม่ได้ตั้งค่า TOKENME_API_KEY ใน Cloudflare Pages";
         $("#assistant-connection-label").textContent=status;
         setAssistantStatus(status);
       }catch(error){
         $("#assistant-connection-label").textContent="ยังไม่เชื่อมต่อ";
-        setAssistantStatus("เชื่อมต่อผู้ช่วยไม่ได้ กรุณาลองใหม่ภายหลัง");
+        console.error("Could not check assistant connection:",error);
+        setAssistantStatus(error.message||"เชื่อมต่อผู้ช่วยไม่ได้ กรุณาลองใหม่ภายหลัง");
       }
     }
     async function sendAssistantMessage(input) {
@@ -1723,8 +1745,7 @@
             memories:makeAssistantMemories(question)
           })
         });
-        const result=await response.json().catch(()=>({}));
-        if(!response.ok)throw new Error(result.error||`ส่งข้อความไม่สำเร็จ (HTTP ${response.status})`);
+        const result=await readAssistantApiResponse(response);
         if(typeof result.reply!=="string"||!result.reply.trim())throw new Error("ผู้ช่วย AI ไม่ได้ส่งคำตอบกลับมา กรุณาลองใหม่");
         assistantChatMessages.push({role:"assistant",content:result.reply.trim()});
         saveAssistantChat();
