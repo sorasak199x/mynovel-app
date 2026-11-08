@@ -60,6 +60,8 @@
     .nav.nested { padding-left:12px; border-left:1px solid #3a403a; margin-left:18px; }
     .nav.nested button { padding:8px 10px; font-size:12px; }
     .nav.nested .nav-icon { font-size:13px; }
+    .nav.nested [data-page] { cursor:grab; touch-action:none; user-select:none; }
+    .nav.nested [data-page].is-reordering { cursor:grabbing; opacity:.55; }
     .side-bottom { margin-top:auto; }
     .writing-tip { padding:14px; border:1px solid var(--line); border-radius:12px; background:#222623; }
     .writing-tip strong { display:block; color:var(--accent); font-size:12px; margin-bottom:5px; }
@@ -578,53 +580,175 @@
     .assistant-launcher { width:56px; height:56px; display:grid; place-items:center; border:1px solid #d5e0bb; border-radius:50%; background:var(--accent); color:#273022; box-shadow:0 8px 26px #0008; }
     .assistant-launcher:hover { transform:translateY(-2px); background:#d2dfb0; }
     .assistant-launcher svg { width:28px; height:28px; display:block; }
-    .assistant-panel { position:absolute; right:0; bottom:70px; width:min(390px,calc(100vw - 28px)); height:min(590px,calc(100vh - 112px)); display:flex; flex-direction:column; overflow:hidden; border:1px solid #485047; border-radius:16px; background:#252a26; box-shadow:0 18px 60px #000a; }
+    .assistant-panel { position:absolute; right:0; bottom:70px; width:min(390px,calc(100vw - 28px)); height:min(590px,calc(100vh - 112px)); display:flex; flex-direction:column; overflow:hidden; border:1px solid #37393c; border-radius:16px; background:#1b1c1e; box-shadow:0 18px 60px #000a; }
     .assistant-panel[hidden] { display:none; }
-    .assistant-panel-header { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 14px; border-bottom:1px solid var(--line); background:#292e2a; }
-    .assistant-panel-title { min-width:0; }
+    .assistant-panel-header { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 14px; border-bottom:1px solid #34363a; background:#202123; }
+    .assistant-panel-title { min-width:0; flex:1; }
     .assistant-panel-title strong { display:block; font-size:13px; }
     .assistant-panel-title span { display:block; color:var(--muted); font-size:10px; }
-    .assistant-panel-actions { display:flex; gap:5px; }
-    .assistant-panel-actions button { min-width:30px; height:30px; border:1px solid transparent; border-radius:7px; background:transparent; color:#b9c0b7; font-size:16px; }
+    .assistant-panel-actions { display:flex; flex:none; align-items:center; gap:5px; }
+    .assistant-panel-actions button { min-width:30px; height:30px; padding:0; border:1px solid transparent; border-radius:7px; background:transparent; color:#b9c0b7; font-size:16px; }
     .assistant-panel-actions button:hover { border-color:var(--line); background:#343a35; color:var(--text); }
+    .assistant-panel .assistant-chat-select { width:100%; min-width:0; height:22px; border:0; border-radius:0; background:transparent; color:#e8e9eb; padding:0 16px 0 0; font-size:13px; font-weight:650; }
+    .assistant-panel .assistant-chat-select:disabled { opacity:1; color:#e8e9eb; }
+    .assistant-panel .assistant-chat-select option { background:#252629; color:#e8e9eb; }
+    .assistant-panel-new-chat { width:30px; height:30px; min-width:30px; display:grid; place-items:center; padding:0 !important; border:1px solid #414348 !important; border-radius:50% !important; color:#e3e5e8 !important; font-size:19px !important; line-height:1; }
+    .assistant-panel-new-chat:hover { border-color:#74777d !important; background:#303134 !important; }
+    .assistant-widget-history { display:flex; min-height:0; flex:1; flex-direction:column; padding:10px 12px; }
+    .assistant-widget-history[hidden],.assistant-widget-chat[hidden] { display:none !important; }
+    .assistant-widget-history-top { display:flex; align-items:center; gap:5px; padding:2px 3px 9px; color:#aeb2b8; font-size:11px; }
+    .assistant-widget-history-top strong { color:#777b82; font-size:10px; font-weight:500; }
+    .assistant-mini-history-list { display:flex; min-height:0; flex:1; flex-direction:column; gap:3px; overflow:auto; overscroll-behavior:contain; padding:1px 2px 4px 0; scrollbar-color:#45474c transparent; scrollbar-width:thin; }
+    .assistant-mini-history-item { display:grid; flex:none; grid-template-columns:minmax(0,1fr) 26px; align-items:center; gap:3px; min-height:54px; padding:3px; border:1px solid transparent; border-radius:9px; }
+    .assistant-mini-history-item:hover,.assistant-mini-history-item.active { background:#2b2c2f; }
+    .assistant-mini-history-open { width:100%; min-width:0; min-height:44px; display:flex; flex-direction:column; align-items:flex-start; justify-content:center; gap:4px; padding:6px 6px 6px 11px; border:0; border-radius:7px; background:transparent; color:#e1e3e6; text-align:left; position:relative; }
+    .assistant-mini-history-open::before { content:""; position:absolute; left:2px; top:50%; width:4px; height:4px; border-radius:50%; background:#4d5055; transform:translateY(-50%); }
+    .assistant-mini-history-open[aria-current="true"]::before { width:6px; height:6px; background:#c9d4b0; }
+    .assistant-mini-history-open strong { width:100%; overflow:hidden; font-size:12px; font-weight:550; text-overflow:ellipsis; white-space:nowrap; }
+    .assistant-mini-history-open span { width:100%; overflow:hidden; color:#93979e; font-size:10px; text-overflow:ellipsis; white-space:nowrap; }
+    .assistant-mini-history-edit { width:25px; height:25px; display:grid; place-items:center; border:0; border-radius:7px; background:transparent; color:#9297a0; font-size:13px; opacity:0; }
+    .assistant-mini-history-edit,.assistant-history-rename { transform:scaleX(-1); }
+    .assistant-mini-history-item:hover .assistant-mini-history-edit,.assistant-mini-history-item:focus-within .assistant-mini-history-edit { opacity:1; }
+    .assistant-mini-history-edit:hover { background:#3a3b3e; color:#e5e7ea; }
+    .assistant-mini-history-empty { margin:auto 8px; color:#979ba2; font-size:11px; line-height:1.6; text-align:center; }
+    .assistant-widget-chat { display:flex; min-height:0; flex:1; flex-direction:column; }
+    .assistant-widget-chat[hidden] { display:none !important; }
+    .assistant-widget-chat.history-chat { display:none !important; }
+    .assistant-widget-composer { flex:none; padding:8px; border-top:1px solid #34363a; background:#202123; }
+    .assistant-widget-composer .assistant-status { width:100%; min-height:16px; margin:0 0 4px; padding:0; font-size:9px; }
+    .assistant-widget-composer .assistant-compose { grid-template-columns:minmax(0,1fr) 36px; gap:5px; padding:5px 6px 5px 10px; }
+    .assistant-widget-composer .assistant-compose textarea { min-height:34px; padding:7px 0; }
+    .assistant-widget-composer .assistant-compose button { width:34px; height:34px; padding:0; }
+    .assistant-widget-composer .assistant-composer-note { font-size:8px; }
+    .assistant-history-rename { width:25px; height:25px; display:grid; place-items:center; border:0; border-radius:7px; background:transparent; color:#828b82; font-size:12px; opacity:0; }
+    .assistant-history-item:hover .assistant-history-rename,.assistant-history-item:focus-within .assistant-history-rename { opacity:1; }
+    .assistant-history-rename:hover { background:#343a35; color:var(--text); }
+    .assistant-panel-back { width:30px; height:30px; display:grid; flex:none; place-items:center; border:1px solid transparent !important; border-radius:50% !important; color:#c8cbd0 !important; font-size:18px !important; }
+    .assistant-panel-back[hidden] { display:none !important; }
+    .assistant-panel-back:hover { border-color:#414348 !important; background:#303134 !important; }
     .app.assistant-mode { height:100dvh; min-height:0; }
     .app.assistant-mode .main { display:flex; min-height:0; flex-direction:column; }
     .app.assistant-mode .topbar { flex:none; }
-    .app.assistant-mode .content { display:flex; flex:1; min-height:0; flex-direction:column; overflow:hidden; padding-top:24px; padding-bottom:24px; }
+    .app.assistant-mode .content { display:flex; width:100%; max-width:none; flex:1; min-height:0; flex-direction:column; overflow:hidden; padding:20px clamp(16px,4vw,48px) 18px; }
     .app.assistant-mode #assistant.active { display:flex; flex:1; min-height:0; flex-direction:column; }
-    .app.assistant-mode .page-heading { flex:none; margin-bottom:18px; }
-    .assistant-page-card { display:flex; flex:1; min-height:0; flex-direction:column; padding:0; overflow:hidden; }
+    .app.assistant-mode .page-heading { width:min(100%,1000px); flex:none; align-self:center; align-items:center; margin-bottom:13px; }
+    .app.assistant-mode .page-heading h1 { margin-top:2px; font-size:23px; }
+    .app.assistant-mode .page-heading .eyebrow { font-size:9px; }
+    .app.assistant-mode .page-heading .subtitle { font-size:12px; }
+    .assistant-workspace { width:min(100%,1120px); display:grid; grid-template-columns:230px minmax(0,1fr); flex:1; min-height:0; align-self:center; gap:12px; }
+    .assistant-history-sidebar { display:flex; min-height:0; flex-direction:column; gap:10px; overflow:hidden; padding:11px; border:1px solid #343a35; border-radius:16px; background:#252a26; }
+    .assistant-history-top { display:flex; align-items:center; justify-content:space-between; gap:7px; }
+    .assistant-history-top strong { color:#dce1da; font-size:12px; font-weight:650; }
+    .assistant-history-new { min-height:32px; border:1px solid #566449; border-radius:9px; background:#343d31; color:#dce6cc; padding:5px 9px; font-size:10px; font-weight:600; white-space:nowrap; }
+    .assistant-history-new:hover { border-color:#879675; background:#3c4738; }
+    .assistant-history-search { display:flex; align-items:center; gap:7px; min-height:33px; border:1px solid #3b423c; border-radius:9px; background:#202421; padding:0 9px; color:#879087; }
+    .assistant-history-search svg { width:14px; height:14px; flex:none; }
+    .assistant-history-search input { width:100%; min-width:0; border:0; outline:0; background:transparent; color:var(--text); font:inherit; font-size:10px; }
+    .assistant-history-search input::placeholder { color:#7f8880; }
+    .assistant-history-caption { display:flex; align-items:center; justify-content:space-between; padding:2px 3px 0; color:#929991; font-size:9px; letter-spacing:.03em; }
+    .assistant-history-caption span:last-child { color:#747d75; }
+    .assistant-chat-history { display:flex; min-height:0; flex:1; flex-direction:column; gap:4px; overflow:auto; overscroll-behavior:contain; padding:1px 2px 4px 0; scrollbar-color:#495149 transparent; scrollbar-width:thin; }
+    .assistant-history-empty { margin:auto 4px; color:#858e86; font-size:10px; line-height:1.6; text-align:center; }
+    .assistant-history-item { display:grid; flex:none; grid-template-columns:minmax(0,1fr) 26px 26px; align-items:center; gap:2px; min-height:48px; padding:3px; border:1px solid transparent; border-radius:10px; transition:background .15s,border-color .15s; }
+    .assistant-history-item:hover { background:#2c322d; }
+    .assistant-history-item.active { border-color:#46513f; background:#30372f; }
+    .assistant-history-open { display:flex; min-width:0; flex-direction:column; align-items:flex-start; gap:3px; border:0; background:transparent; color:#d7dbd5; padding:4px 6px; text-align:left; }
+    .assistant-history-open strong { width:100%; overflow:hidden; font-size:10px; font-weight:560; text-overflow:ellipsis; white-space:nowrap; }
+    .assistant-history-open span { width:100%; overflow:hidden; color:#89928a; font-size:9px; text-overflow:ellipsis; white-space:nowrap; }
+    .assistant-history-item.active .assistant-history-open strong { color:#e4eadc; }
+    .assistant-history-delete { width:25px; height:25px; display:grid; place-items:center; border:0; border-radius:7px; background:transparent; color:#828b82; font-size:15px; opacity:0; transition:opacity .15s,background .15s,color .15s; }
+    .assistant-history-item:hover .assistant-history-delete,.assistant-history-item:focus-within .assistant-history-delete { opacity:1; }
+    .assistant-history-delete:hover { background:#44322f; color:#efb9ac; }
+    .assistant-history-footer { padding:8px 4px 1px; border-top:1px solid #353b36; color:#798279; font-size:9px; }
+    .assistant-page-card { width:100%; min-width:0; display:flex; flex:1; min-height:0; flex-direction:column; align-self:stretch; padding:0; overflow:hidden; border:1px solid #343a35; border-radius:18px; background:#232724; box-shadow:0 12px 36px #0002; }
     .assistant-disclosure { padding:10px 15px; border-bottom:1px solid var(--line); color:#c8c0a3; background:#302e27; font-size:11px; }
-    .assistant-chat-toolbar { display:grid; grid-template-columns:minmax(0,1fr) auto auto; gap:7px; padding:9px 12px; border-bottom:1px solid var(--line); background:#252a26; }
-    .assistant-chat-select { min-width:0; height:34px; border:1px solid #404640; border-radius:8px; background:#202421; color:var(--text); padding:5px 8px; font:inherit; font-size:11px; }
-    .assistant-chat-toolbar .button { min-height:34px; padding:6px 9px; font-size:11px; white-space:nowrap; }
-    .assistant-messages { display:flex; flex:1; min-height:0; flex-direction:column; gap:12px; overflow:auto; overscroll-behavior:contain; padding:18px; }
-    .assistant-message { max-width:min(86%,760px); padding:10px 13px; border:1px solid #3c433b; border-radius:12px 12px 12px 3px; background:#222623; color:var(--text); white-space:pre-wrap; overflow-wrap:anywhere; font-size:13px; line-height:1.7; }
-    .assistant-message.user { align-self:flex-end; border-color:#536047; border-radius:12px 12px 3px 12px; background:#30372d; }
+    .assistant-chat-toolbar { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 14px; border-bottom:1px solid #343a35; background:#272c28; }
+    .assistant-chat-heading { display:flex; min-width:0; align-items:center; gap:10px; }
+    .assistant-chat-mark { width:30px; height:30px; display:grid; flex:none; place-items:center; border:1px solid #4b5845; border-radius:10px; background:#343d31; color:var(--accent); font-size:15px; }
+    .assistant-chat-heading strong { display:block; font-size:12px; font-weight:650; }
+    .assistant-chat-heading span { display:block; max-width:270px; overflow:hidden; color:var(--muted); font-size:10px; text-overflow:ellipsis; white-space:nowrap; }
+    .assistant-chat-controls { display:flex; min-width:0; align-items:center; gap:7px; }
+    .assistant-chat-select { width:min(220px,25vw); min-width:100px; height:35px; border:1px solid #414841; border-radius:9px; background:#202421; color:var(--text); padding:5px 9px; font:inherit; font-size:11px; }
+    .assistant-chat-toolbar .button { min-height:35px; padding:6px 10px; border-radius:9px; font-size:11px; white-space:nowrap; }
+    .assistant-chat-toolbar [data-assistant-chat-action="delete"] { color:#c7aaa4; }
+    .assistant-chat-toolbar [data-assistant-chat-action="delete"]:hover { color:#efb9ac; }
+    .assistant-messages { display:flex; flex:1; min-height:0; flex-direction:column; gap:7px; overflow:auto; overscroll-behavior:contain; padding:25px 24px 30px; scroll-behavior:smooth; }
+    .assistant-message { width:min(100%,800px); max-width:800px; align-self:center; margin:0 auto; padding:14px 4px; border:0; border-radius:0; background:transparent; color:#dfe3dd; white-space:pre-wrap; overflow-wrap:anywhere; font-size:14px; line-height:1.85; }
+    .assistant-message.assistant::before { content:"✦"; display:inline-grid; width:24px; height:24px; place-items:center; margin:0 9px 0 0; border:1px solid #4b5845; border-radius:8px; background:#343d31; color:var(--accent); font-size:12px; vertical-align:middle; }
+    .assistant-message.user { width:fit-content; max-width:min(78%,680px); align-self:flex-end; margin:2px max(calc((100% - 800px)/2),0px) 4px 0; padding:11px 16px; border:1px solid #434c40; border-radius:18px 18px 5px 18px; background:#30372f; color:var(--text); line-height:1.75; }
+    .assistant-message.user::before { content:none; }
     .assistant-message.error { border-color:#7a5148; color:#efb9ac; }
     .assistant-empty { margin:auto; max-width:370px; color:var(--muted); text-align:center; font-size:12px; }
-    .assistant-compose { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:9px; padding:12px; border-top:1px solid var(--line); background:#292e2a; }
-    .assistant-compose textarea { width:100%; min-height:44px; max-height:140px; resize:vertical; border:1px solid #404640; border-radius:9px; background:#202421; color:var(--text); padding:10px 11px; outline:none; font:inherit; font-size:12px; }
-    .assistant-compose textarea:focus { border-color:#9eaf82; }
-    .assistant-compose button { align-self:end; min-height:40px; }
-    .assistant-status { min-height:19px; padding:0 14px 8px; color:var(--muted); font-size:11px; }
-    .assistant-panel .assistant-messages { min-height:0; padding:12px; }
-    .assistant-panel .assistant-chat-toolbar { grid-template-columns:minmax(0,1fr) auto auto; gap:5px; padding:7px; }
-    .assistant-panel .assistant-chat-toolbar .button { padding:5px 7px; font-size:10px; }
-    .assistant-panel .assistant-chat-select { font-size:10px; }
-    .assistant-panel .assistant-message { max-width:94%; padding:8px 10px; font-size:12px; }
-    .assistant-panel .assistant-compose { padding:9px; }
-    .assistant-panel .assistant-compose textarea { min-height:40px; }
-    .assistant-panel .assistant-compose button { padding:7px 10px; }
+    .assistant-empty-state { width:min(100%,700px); margin:auto; padding:20px; text-align:center; }
+    .assistant-empty-mark { width:52px; height:52px; display:grid; place-items:center; margin:0 auto 18px; border:1px solid #4b5845; border-radius:17px; background:linear-gradient(145deg,#394332,#2a302b); color:var(--accent); font-size:24px; box-shadow:0 10px 30px #0003; }
+    .assistant-empty-state h2 { margin:0 0 7px; color:var(--text); font-size:20px; font-weight:600; letter-spacing:-.02em; }
+    .assistant-empty-state p { margin:0; color:var(--muted); font-size:12px; }
+    .assistant-prompt-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:9px; margin-top:24px; text-align:left; }
+    .assistant-prompt { min-height:76px; border:1px solid #3d443e; border-radius:12px; background:#282d29; color:#d5d9d2; padding:12px; text-align:left; font:inherit; font-size:11px; line-height:1.55; transition:border-color .15s,background .15s,transform .15s; }
+    .assistant-prompt:hover { transform:translateY(-2px); border-color:#647354; background:#303730; }
+    .assistant-prompt span { display:block; margin-bottom:5px; color:var(--accent); font-size:15px; }
+    .assistant-composer-dock { flex:none; padding:12px 24px 10px; border-top:1px solid #343a35; background:linear-gradient(180deg,#252a26,#222623); }
+    .assistant-compose { width:min(100%,800px); display:grid; grid-template-columns:minmax(0,1fr) 42px; align-items:end; gap:8px; margin:0 auto; padding:8px 9px 8px 15px; border:1px solid #4b534b; border-radius:22px; background:#2b302c; box-shadow:0 5px 22px #0003; }
+    .assistant-compose:focus-within { border-color:#77896a; box-shadow:0 0 0 3px #a5b88a14,0 5px 22px #0003; }
+    .assistant-compose textarea { width:100%; min-height:38px; max-height:160px; resize:none; border:0; background:transparent; color:var(--text); padding:8px 0; outline:none; font:inherit; font-size:13px; line-height:1.55; }
+    .assistant-compose textarea:focus { border-color:transparent; }
+    .assistant-compose button { width:40px; height:40px; display:grid; place-items:center; align-self:end; border-radius:50%; padding:0; font-size:20px; line-height:1; }
+    .assistant-composer-note { margin:7px auto 0; color:#7f8880; text-align:center; font-size:9px; }
+    .assistant-status { width:min(100%,800px); min-height:18px; margin:0 auto 5px; color:var(--muted); font-size:10px; }
+    .assistant-panel .assistant-messages { min-height:0; gap:12px; padding:16px 18px 20px; background:#1b1c1e; }
+    .assistant-panel .assistant-message { width:100%; max-width:100%; margin:0; padding:8px 2px; color:#e3e5e8; font-size:13px; line-height:1.65; }
+    .assistant-panel .assistant-message.user { width:fit-content; max-width:88%; margin:2px 0 5px auto; padding:9px 13px; border:0; border-radius:12px; background:#303134; color:#f0f1f3; }
+    .assistant-panel .assistant-message.assistant::before { display:none; }
+    .assistant-panel .assistant-composer-dock { padding:8px; border-top-color:#34363a; background:#202123; }
+    .assistant-panel .assistant-compose { grid-template-columns:minmax(0,1fr) 36px; gap:5px; padding:5px 6px 5px 10px; }
+    .assistant-panel .assistant-compose textarea { min-height:34px; padding:7px 0; }
+    .assistant-panel .assistant-compose button { width:34px; height:34px; padding:0; }
+    .assistant-panel .assistant-composer-note { font-size:8px; }
     .assistant-panel .assistant-disclosure { padding:8px 10px; font-size:10px; }
-    .assistant-panel .assistant-status { padding:0 10px 7px; }
+    .assistant-panel .assistant-status { width:100%; min-height:16px; margin:0 0 4px; padding:0; font-size:9px; }
     @media (max-width: 600px) {
       .app.assistant-mode { display:flex; min-height:0; flex-direction:column; overflow:hidden; }
       .app.assistant-mode .sidebar { position:relative; width:100%; flex:0 0 auto; }
       .app.assistant-mode .main { width:100%; flex:1; }
-      .app.assistant-mode .content { padding:16px 12px calc(12px + env(safe-area-inset-bottom)); }
-      .app.assistant-mode .page-heading { margin-bottom:12px; }
-      .app.assistant-mode .assistant-page-card { min-height:0; }
+      .app.assistant-mode .content { padding:12px 10px calc(10px + env(safe-area-inset-bottom)); }
+      .app.assistant-mode .page-heading { margin-bottom:9px; }
+      .app.assistant-mode .page-heading h1 { font-size:20px; }
+      .app.assistant-mode .page-heading .subtitle { font-size:10px; }
+      .assistant-workspace { grid-template-columns:minmax(0,1fr); grid-template-rows:94px minmax(0,1fr); gap:7px; }
+      .assistant-history-sidebar { display:grid; grid-template-rows:30px minmax(0,1fr); gap:5px; padding:6px 7px; border-radius:12px; }
+      .assistant-history-top strong { font-size:10px; }
+      .assistant-history-new { min-height:27px; padding:4px 8px; font-size:9px; }
+      .assistant-history-search,.assistant-history-caption,.assistant-history-footer { display:none; }
+      .assistant-chat-history { flex-direction:row; align-items:stretch; gap:5px; overflow-x:auto; overflow-y:hidden; padding:0 0 2px; }
+      .assistant-history-item { width:156px; min-width:132px; min-height:43px; grid-template-columns:minmax(0,1fr) 22px 22px; gap:0; padding:2px; border-radius:8px; }
+      .assistant-history-open { gap:1px; padding:3px 5px; }
+      .assistant-history-open strong { font-size:9px; }
+      .assistant-history-open span { font-size:8px; }
+      .assistant-history-delete { width:22px; height:22px; opacity:.72; }
+      .assistant-history-empty { width:100%; margin:0 5px; text-align:left; font-size:9px; }
+      .assistant-page-card { min-height:0; border-radius:14px; }
+      .assistant-page-card { border-radius:14px; }
+      .assistant-chat-toolbar { align-items:flex-start; flex-direction:column; gap:8px; padding:9px; }
+      .assistant-chat-heading span { max-width:calc(100vw - 90px); }
+      .assistant-chat-controls { width:100%; display:grid; grid-template-columns:minmax(0,1fr) auto auto; gap:5px; }
+      .assistant-chat-select { width:100%; min-width:0; height:34px; }
+      .assistant-chat-toolbar .button { min-height:34px; padding:5px 7px; font-size:10px; }
+      .assistant-messages { gap:5px; padding:14px 12px 18px; }
+      .assistant-message { padding:10px 2px; font-size:13px; }
+      .assistant-message.user { max-width:88%; margin-right:0; padding:10px 13px; }
+      .assistant-empty-state { padding:14px 2px; }
+      .assistant-empty-mark { width:44px; height:44px; margin-bottom:13px; font-size:21px; }
+      .assistant-empty-state h2 { font-size:17px; }
+      .assistant-empty-state p { font-size:11px; }
+      .assistant-prompt-grid { grid-template-columns:1fr; gap:7px; margin-top:18px; }
+      .assistant-prompt { min-height:0; padding:9px 11px; }
+      .assistant-prompt span { display:inline; margin-right:7px; }
+      .assistant-composer-dock { padding:8px 9px calc(7px + env(safe-area-inset-bottom)); }
+      .assistant-compose { grid-template-columns:minmax(0,1fr) 38px; gap:5px; padding:5px 6px 5px 12px; border-radius:20px; }
+      .assistant-compose textarea { min-height:36px; padding:7px 0; font-size:16px; }
+      .assistant-compose button { width:36px; height:36px; }
+      .assistant-composer-note { font-size:8px; }
+      .assistant-status { font-size:9px; }
       .assistant-widget { right:14px; bottom:14px; }
       .assistant-panel { position:fixed; right:8px; bottom:78px; width:calc(100vw - 16px); height:min(640px,calc(100dvh - 94px)); }
       .assistant-launcher { width:52px; height:52px; }
@@ -1119,18 +1243,40 @@
           <div class="page-heading">
             <div><div class="eyebrow">WRITING COMPANION</div><h1>ปรึกษานิยาย</h1><p class="subtitle">คุยเรื่องพล็อต ตัวละคร และต้นฉบับ โดยอ้างอิงข้อมูลนิยายเรื่องที่เปิดอยู่</p></div>
           </div>
-          <div class="card assistant-page-card">
-            <div class="assistant-chat-toolbar">
-              <select class="assistant-chat-select" data-assistant-chat-select aria-label="เลือกแชทปรึกษานิยาย"></select>
-              <button type="button" class="button" data-assistant-chat-action="new">＋ แชทใหม่</button>
-              <button type="button" class="button" data-assistant-chat-action="delete">ลบแชท</button>
+          <div class="assistant-workspace">
+            <aside class="assistant-history-sidebar" aria-label="ประวัติแชท">
+              <div class="assistant-history-top">
+                <strong>บทสนทนา</strong>
+                <button type="button" class="assistant-history-new" data-assistant-chat-action="new">＋ แชทใหม่</button>
+              </div>
+              <label class="assistant-history-search">
+                <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="8.8" cy="8.8" r="5.6" stroke="currentColor" stroke-width="1.5"></circle><path d="m13 13 4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path></svg>
+                <input type="search" id="assistant-chat-search" placeholder="ค้นหาแชท" aria-label="ค้นหาประวัติแชท">
+              </label>
+              <div class="assistant-history-caption"><span>ล่าสุด</span><span id="assistant-chat-count">0 แชท</span></div>
+              <div class="assistant-chat-history" id="assistant-chat-history" role="list" aria-label="รายการแชท"></div>
+              <div class="assistant-history-footer">ประวัติแชทแยกตามนิยายเรื่องนี้</div>
+            </aside>
+            <div class="card assistant-page-card">
+              <div class="assistant-chat-toolbar">
+                <div class="assistant-chat-heading">
+                  <span class="assistant-chat-mark" aria-hidden="true">✦</span>
+                  <div><strong id="assistant-active-chat-title">แชทใหม่</strong><span id="assistant-chat-project-label">อ้างอิงข้อมูลจากนิยายที่เปิดอยู่</span></div>
+                </div>
+                <div class="assistant-chat-controls">
+                  <button type="button" class="button" data-assistant-chat-action="delete" title="ลบแชทปัจจุบัน">ลบแชท</button>
+                </div>
+              </div>
+              <div class="assistant-messages" id="assistant-page-messages" role="log" aria-live="polite"></div>
+              <div class="assistant-composer-dock">
+                <div class="assistant-status" id="assistant-page-status" role="status" aria-live="polite">กำลังตรวจสอบการเชื่อมต่อ…</div>
+                <form class="assistant-compose" id="assistant-page-form">
+                  <textarea id="assistant-page-input" maxlength="4000" aria-label="พิมพ์ข้อความปรึกษานิยาย" placeholder="ถามเรื่องพล็อต ตัวละคร หรือส่งข้อความที่เขียนติดอยู่…"></textarea>
+                  <button type="submit" class="button primary" aria-label="ส่งข้อความ" title="ส่งข้อความ">↑</button>
+                </form>
+                <p class="assistant-composer-note">AI อาจตอบคลาดเคลื่อนได้ โปรดตรวจสอบข้อมูลสำคัญกับต้นฉบับของคุณ</p>
+              </div>
             </div>
-            <div class="assistant-messages" id="assistant-page-messages" role="log" aria-live="polite"></div>
-            <div class="assistant-status" id="assistant-page-status" role="status" aria-live="polite">กำลังตรวจสอบการเชื่อมต่อ…</div>
-            <form class="assistant-compose" id="assistant-page-form">
-              <textarea id="assistant-page-input" maxlength="4000" aria-label="พิมพ์ข้อความปรึกษานิยาย" placeholder="ถามเรื่องพล็อต ตัวละคร หรือส่งข้อความที่เขียนติดอยู่…"></textarea>
-              <button type="submit" class="button primary">ส่ง</button>
-            </form>
           </div>
         </section>
         <section class="assistant-widget" id="assistant-widget" hidden>
@@ -1144,22 +1290,33 @@
           </button>
           <div class="assistant-panel" id="assistant-panel" hidden>
             <header class="assistant-panel-header">
-              <div class="assistant-panel-title"><strong>ปรึกษานิยาย</strong><span id="assistant-connection-label">กำลังตรวจสอบ…</span></div>
+              <button type="button" class="assistant-panel-back" id="assistant-widget-back" aria-label="กลับไปยังรายการแชท" title="กลับไปยังรายการแชท" hidden>‹</button>
+              <div class="assistant-panel-title">
+                <strong id="assistant-widget-title">ปรึกษานิยาย</strong>
+                <span id="assistant-connection-label">กำลังตรวจสอบ…</span>
+              </div>
               <div class="assistant-panel-actions">
+                <button type="button" class="assistant-panel-new-chat" data-assistant-chat-action="new" aria-label="เริ่มแชทใหม่" title="เริ่มแชทใหม่">+</button>
                 <button type="button" id="assistant-close" aria-label="ปิดหน้าต่างแชต" title="ปิด">×</button>
               </div>
             </header>
-            <div class="assistant-chat-toolbar">
-              <select class="assistant-chat-select" data-assistant-chat-select aria-label="เลือกแชทปรึกษานิยาย"></select>
-              <button type="button" class="button" data-assistant-chat-action="new">＋ ใหม่</button>
-              <button type="button" class="button" data-assistant-chat-action="delete">ลบ</button>
+            <section class="assistant-widget-history" id="assistant-widget-history" aria-label="ประวัติแชท">
+              <div class="assistant-widget-history-top">
+                <span>ประวัติแชท</span><strong id="assistant-widget-chat-count">0</strong>
+              </div>
+              <div class="assistant-mini-history-list" id="assistant-widget-history-list" role="list"></div>
+            </section>
+            <div class="assistant-widget-chat" id="assistant-widget-chat">
+              <div class="assistant-messages" id="assistant-widget-messages" role="log" aria-live="polite"></div>
             </div>
-            <div class="assistant-messages" id="assistant-widget-messages" role="log" aria-live="polite"></div>
-            <div class="assistant-status" id="assistant-widget-status" role="status" aria-live="polite"></div>
-            <form class="assistant-compose" id="assistant-widget-form">
-              <textarea id="assistant-widget-input" maxlength="4000" aria-label="พิมพ์ข้อความปรึกษานิยาย" placeholder="พิมพ์ข้อความ…"></textarea>
-              <button type="submit" class="button primary">ส่ง</button>
-            </form>
+            <div class="assistant-widget-composer">
+              <div class="assistant-status" id="assistant-widget-status" role="status" aria-live="polite"></div>
+              <form class="assistant-compose" id="assistant-widget-form">
+                <textarea id="assistant-widget-input" maxlength="4000" aria-label="พิมพ์ข้อความปรึกษานิยาย" placeholder="เริ่มคุยปรึกษา"></textarea>
+                <button type="submit" class="button primary" aria-label="ส่งข้อความ" title="ส่งข้อความ">↑</button>
+              </form>
+              <p class="assistant-composer-note">คำตอบ AI อาจไม่ถูกต้องทั้งหมด</p>
+            </div>
           </div>
         </section>
       </div>
@@ -1208,6 +1365,13 @@
       <p class="subtitle" id="delete-confirm-message"></p>
       <div class="dialog-actions"><div class="dialog-actions-right"><button class="button" id="cancel-delete-confirm" type="button">ยกเลิก</button><button class="button delete-button" id="accept-delete-confirm" type="button">ยืนยันการลบ</button></div></div>
     </div>
+  </dialog>
+  <dialog id="assistant-rename-dialog" aria-labelledby="assistant-rename-title">
+    <form id="assistant-rename-form" class="dialog-inner">
+      <div class="dialog-heading"><h2 id="assistant-rename-title">เปลี่ยนชื่อแชท</h2><button class="close-button" type="button" id="close-assistant-rename" aria-label="ปิด">×</button></div>
+      <div class="field"><label for="assistant-rename-input">ชื่อแชท</label><input id="assistant-rename-input" required maxlength="80" placeholder="ตั้งชื่อแชท"></div>
+      <div class="dialog-actions"><div class="dialog-actions-right"><button class="button" type="button" id="cancel-assistant-rename">ยกเลิก</button><button class="button primary" type="submit">บันทึกชื่อ</button></div></div>
+    </form>
   </dialog>
   <dialog id="diagram-dialog">
     <form id="diagram-form" class="dialog-inner">
@@ -1713,7 +1877,8 @@
           if(!key?.startsWith(ASSISTANT_CHAT_KEY_PREFIX))continue;
           const projectId=key.slice(ASSISTANT_CHAT_KEY_PREFIX.length);
           try{
-            chats[projectId]=sanitizeAssistantMessages(JSON.parse(localStorage.getItem(key)||"[]"));
+            const saved=JSON.parse(localStorage.getItem(key)||"[]");
+            chats[projectId]=Array.isArray(saved)?sanitizeAssistantMessages(saved):normalizeAssistantChatState(saved);
           }catch(error){
             console.error(`Could not read saved assistant chat for ${projectId}:`,error);
           }
@@ -1739,6 +1904,7 @@
     let assistantChatProjectId=null;
     let assistantChatMessages=[];
     let assistantChatBusy=false;
+    let assistantRenameChatId=null;
     function activeAssistantChat(projectId=data?.id) {
       const state=workspace.assistantChats?.[projectId];
       return state?.chats?.find(chat=>chat.id===state.activeChatId)||null;
@@ -1764,16 +1930,16 @@
       try{
         const saved=workspace.assistantChats?.[data.id]??(authenticatedUser?[]:JSON.parse(localStorage.getItem(ASSISTANT_CHAT_KEY_PREFIX+data.id)||"[]"));
         const state=normalizeAssistantChatState(saved);
-        if(!state.chats.length)state.chats.push(makeAssistantChat());
-        if(!state.chats.some(chat=>chat.id===state.activeChatId)){
+        if(!state.chats.length){
+          state.activeChatId=null;
+        }else if(!state.chats.some(chat=>chat.id===state.activeChatId)){
           state.activeChatId=state.chats[state.chats.length-1].id;
         }
         workspace.assistantChats[data.id]=state;
         assistantChatMessages=activeAssistantChat(data.id)?.messages||[];
       }catch(error){
         console.error("Could not read saved assistant chat:",error);
-        const state={activeChatId:null,chats:[makeAssistantChat()]};
-        state.activeChatId=state.chats[0].id;
+        const state={activeChatId:null,chats:[]};
         workspace.assistantChats[data.id]=state;
         assistantChatMessages=state.chats[0].messages;
       }
@@ -1796,29 +1962,162 @@
       if(projectId===assistantChatProjectId)assistantChatMessages=state.chats.find(item=>item.id===chat.id)?.messages||[];
       persistAssistantChatState(projectId);
     }
+    function assistantChatTimeLabel(timestamp) {
+      if(!timestamp)return "ยังไม่มีข้อความ";
+      const age=Math.max(0,Date.now()-timestamp);
+      if(age<60_000)return "เมื่อสักครู่";
+      if(age<3_600_000)return `${Math.floor(age/60_000)} นาทีที่แล้ว`;
+      if(age<86_400_000)return `${Math.floor(age/3_600_000)} ชั่วโมงที่แล้ว`;
+      return new Intl.DateTimeFormat("th-TH",{day:"numeric",month:"short"}).format(new Date(timestamp));
+    }
+    function renderAssistantHistory(state=normalizeAssistantChatState(workspace.assistantChats?.[data?.id])) {
+      const list=$("#assistant-chat-history");
+      const search=$("#assistant-chat-search");
+      const query=search?.value.trim().toLocaleLowerCase()||"";
+      const chats=[...state.chats].sort((a,b)=>b.updatedAt-a.updatedAt);
+      if($("#assistant-chat-count"))$("#assistant-chat-count").textContent=`${chats.length} แชท`;
+      if($("#assistant-widget-chat-count"))$("#assistant-widget-chat-count").textContent=String(chats.length);
+      const renderList=(target,visibleChats,mini=false)=>{
+        if(!target)return;
+        target.replaceChildren();
+        if(!visibleChats.length){
+          const empty=document.createElement("p");
+          empty.className=mini?"assistant-mini-history-empty":"assistant-history-empty";
+          empty.textContent=mini?"ยังไม่มีประวัติแชท เริ่มแชทใหม่เพื่อคุยกันได้เลย":query?"ไม่พบแชทที่ตรงกับคำค้น":"ยังไม่มีประวัติแชท เริ่มบทสนทนาใหม่ได้เลย";
+          target.append(empty);
+          return;
+        }
+        visibleChats.forEach(chat=>{
+          const latestMessage=chat.messages[chat.messages.length-1]?.content;
+          if(mini){
+            const item=document.createElement("div");
+            item.className=`assistant-mini-history-item${chat.id===state.activeChatId?" active":""}`;
+            item.setAttribute("role","listitem");
+            const open=document.createElement("button");
+            open.type="button";
+            open.className="assistant-mini-history-open";
+            open.dataset.assistantChatOpen=chat.id;
+            open.setAttribute("aria-current",String(chat.id===state.activeChatId));
+            const title=document.createElement("strong");
+            title.textContent=chat.title||"แชทใหม่";
+            const meta=document.createElement("span");
+            meta.textContent=latestMessage?`${assistantChatTimeLabel(chat.updatedAt)} · ${latestMessage}`:assistantChatTimeLabel(chat.updatedAt);
+            open.append(title,meta);
+            const rename=document.createElement("button");
+            rename.type="button";
+            rename.className="assistant-mini-history-edit";
+            rename.dataset.assistantChatRename=chat.id;
+            rename.setAttribute("aria-label",`แก้ชื่อแชท ${chat.title||"แชทใหม่"}`);
+            rename.title="แก้ชื่อแชท";
+            rename.textContent="✎";
+            item.append(open,rename);
+            target.append(item);
+            return;
+          }
+          const item=document.createElement("div");
+          item.className=`assistant-history-item${chat.id===state.activeChatId?" active":""}`;
+          item.setAttribute("role","listitem");
+          const open=document.createElement("button");
+          open.type="button";
+          open.className="assistant-history-open";
+          open.dataset.assistantChatOpen=chat.id;
+          open.setAttribute("aria-current",String(chat.id===state.activeChatId));
+          const title=document.createElement("strong");
+          title.textContent=chat.title||"แชทใหม่";
+          const meta=document.createElement("span");
+          meta.textContent=latestMessage?`${assistantChatTimeLabel(chat.updatedAt)} · ${latestMessage}`:assistantChatTimeLabel(chat.updatedAt);
+          open.append(title,meta);
+          const remove=document.createElement("button");
+          remove.type="button";
+          remove.className="assistant-history-delete";
+          remove.dataset.assistantChatDelete=chat.id;
+          remove.setAttribute("aria-label",`ลบแชท ${chat.title||"แชทใหม่"}`);
+          remove.title="ลบแชทนี้";
+          remove.textContent="×";
+          const rename=document.createElement("button");
+          rename.type="button";
+          rename.className="assistant-history-rename";
+          rename.dataset.assistantChatRename=chat.id;
+          rename.setAttribute("aria-label",`แก้ชื่อแชท ${chat.title||"แชทใหม่"}`);
+          rename.title="แก้ชื่อแชท";
+          rename.textContent="✎";
+          item.append(open,rename,remove);
+          target.append(item);
+        });
+      };
+      if(list){
+        const visibleChats=chats.filter(chat=>{
+          const latestMessage=chat.messages[chat.messages.length-1]?.content||"";
+          return !query||`${chat.title} ${latestMessage}`.toLocaleLowerCase().includes(query);
+        });
+        renderList(list,visibleChats);
+      }
+      renderList($("#assistant-widget-history-list"),chats,true);
+    }
+    function setAssistantWidgetView(view) {
+      const showingChat=view==="chat";
+      $("#assistant-widget-history").hidden=showingChat;
+      $("#assistant-widget-chat").hidden=false;
+      $("#assistant-widget-back").hidden=!showingChat;
+      $("#assistant-widget-chat").classList.toggle("history-chat",!showingChat);
+      const state=normalizeAssistantChatState(workspace.assistantChats?.[data?.id]);
+      const activeChat=state.chats.find(chat=>chat.id===state.activeChatId);
+      $("#assistant-widget-title").textContent=showingChat?(activeChat?.title||"แชทใหม่"):"ปรึกษานิยาย";
+    }
+    function openAssistantWidgetChat(chatId) {
+      selectAssistantChat(chatId);
+      setAssistantWidgetView("chat");
+      $("#assistant-widget-input").focus();
+    }
     function renderAssistantChat() {
       const state=normalizeAssistantChatState(workspace.assistantChats?.[data?.id]);
-      document.querySelectorAll("[data-assistant-chat-select]").forEach(select=>{
-        const options=state.chats.map(chat=>{
-          const option=document.createElement("option");
-          option.value=chat.id;
-          option.textContent=chat.title;
-          option.selected=chat.id===state.activeChatId;
-          return option;
-        });
-        select.replaceChildren(...options);
-        select.disabled=assistantChatBusy||state.chats.length<2;
-      });
+      const projectLabel=$("#assistant-chat-project-label");
+      if(projectLabel)projectLabel.textContent=data?.title?`อ้างอิงข้อมูลจาก ${data.title}`:"อ้างอิงข้อมูลจากนิยายที่เปิดอยู่";
+      const activeChat=state.chats.find(chat=>chat.id===state.activeChatId);
+      const activeTitle=$("#assistant-active-chat-title");
+      if(activeTitle)activeTitle.textContent=activeChat?.title||"แชทใหม่";
+      if($("#assistant-widget-title")&&$("#assistant-widget-history").hidden)$("#assistant-widget-title").textContent=activeChat?.title||"แชทใหม่";
+      renderAssistantHistory(state);
       document.querySelectorAll("[data-assistant-chat-action]").forEach(button=>{
         button.disabled=assistantChatBusy;
       });
       document.querySelectorAll("#assistant-page-messages,#assistant-widget-messages").forEach(container=>{
         container.replaceChildren();
         if(!assistantChatMessages.length){
-          const empty=document.createElement("p");
-          empty.className="assistant-empty";
-          empty.textContent="สวัสดีค่ะ ฉันช่วยคุณคิดและปรับพล็อต ตัวละคร โลกของเรื่อง หรือช่วยหาทางออกเมื่อติดขัดได้ ลองเล่าให้ฟังได้เลย";
-          container.append(empty);
+          if(container.id==="assistant-page-messages"){
+            const welcome=document.createElement("div");
+            welcome.className="assistant-empty-state";
+            const mark=document.createElement("div");
+            mark.className="assistant-empty-mark";
+            mark.textContent="✦";
+            const title=document.createElement("h2");
+            title.textContent="วันนี้อยากคิดเรื่องอะไรดี?";
+            const description=document.createElement("p");
+            description.textContent="ฉันช่วยต่อยอดพล็อต ตัวละคร และโลกนิยายของคุณได้";
+            const prompts=document.createElement("div");
+            prompts.className="assistant-prompt-grid";
+            [
+              ["✦","ช่วยตรวจความต่อเนื่องของพล็อตในเรื่องนี้"],
+              ["◇","ช่วยต่อยอดข้อมูลจากสารานุกรมของฉัน"],
+              ["↗","ช่วยคิดทางเลือกให้ฉากที่ฉันกำลังเขียน"]
+            ].forEach(([icon,text])=>{
+              const button=document.createElement("button");
+              button.type="button";
+              button.className="assistant-prompt";
+              button.dataset.assistantPrompt=text;
+              const promptIcon=document.createElement("span");
+              promptIcon.textContent=icon;
+              button.append(promptIcon,document.createTextNode(text));
+              prompts.append(button);
+            });
+            welcome.append(mark,title,description,prompts);
+            container.append(welcome);
+          }else{
+            const empty=document.createElement("p");
+            empty.className="assistant-empty";
+            empty.textContent="สวัสดีค่ะ ฉันช่วยคุณคิดและปรับพล็อต ตัวละคร โลกของเรื่อง หรือช่วยหาทางออกเมื่อติดขัดได้ ลองเล่าให้ฟังได้เลย";
+            container.append(empty);
+          }
         }else{
           assistantChatMessages.forEach(message=>{
             const bubble=document.createElement("div");
@@ -1863,11 +2162,43 @@
       renderAssistantChat();
       setAssistantStatus("เริ่มแชทใหม่แล้ว");
     }
-    function deleteAssistantConversation() {
+    function openAssistantRename(chatId) {
+      if(!data||assistantChatBusy)return;
+      const state=normalizeAssistantChatState(workspace.assistantChats?.[data.id]);
+      const chat=state.chats.find(item=>item.id===chatId);
+      if(!chat)return;
+      assistantRenameChatId=chat.id;
+      $("#assistant-rename-input").value=chat.title||"";
+      $("#assistant-rename-dialog").showModal();
+      $("#assistant-rename-input").focus();
+      $("#assistant-rename-input").select();
+    }
+    function closeAssistantRename() {
+      assistantRenameChatId=null;
+      if($("#assistant-rename-dialog").open)$("#assistant-rename-dialog").close();
+    }
+    $("#assistant-rename-form").addEventListener("submit",event=>{
+      event.preventDefault();
+      const title=$("#assistant-rename-input").value.trim();
+      if(!title||!assistantRenameChatId||!data)return;
+      const state=normalizeAssistantChatState(workspace.assistantChats?.[data.id]);
+      const chat=state.chats.find(item=>item.id===assistantRenameChatId);
+      if(!chat)return;
+      chat.title=title.slice(0,80);
+      workspace.assistantChats[data.id]=state;
+      persistAssistantChatState(data.id);
+      renderAssistantChat();
+      if($("#assistant-widget-history").hidden)$("#assistant-widget-title").textContent=chat.title;
+      closeAssistantRename();
+    });
+    $("#close-assistant-rename").addEventListener("click",closeAssistantRename);
+    $("#cancel-assistant-rename").addEventListener("click",closeAssistantRename);
+    $("#assistant-rename-dialog").addEventListener("close",()=>{assistantRenameChatId=null;});
+    function deleteAssistantConversation(chatId=activeAssistantChat()?.id) {
       if(!data||assistantChatBusy)return;
       const projectId=data.id;
       const state=normalizeAssistantChatState(workspace.assistantChats?.[projectId]);
-      const target=state.chats.find(chat=>chat.id===state.activeChatId);
+      const target=state.chats.find(chat=>chat.id===chatId);
       if(!target)return;
       requestDeleteConfirmation(`ลบแชท “${target.title}” และประวัติข้อความในแชทนี้หรือไม่?`,()=>{
         const latestState=normalizeAssistantChatState(workspace.assistantChats?.[projectId]);
@@ -1886,14 +2217,40 @@
         persistAssistantChatState(projectId);
       },"ลบแชทนี้?","ลบแชท");
     }
-    document.addEventListener("change",event=>{
-      const select=event.target.closest("[data-assistant-chat-select]");
-      if(select)selectAssistantChat(select.value);
+    $("#assistant-chat-search").addEventListener("input",()=>{
+      renderAssistantHistory();
     });
     document.addEventListener("click",event=>{
+      const renameChat=event.target.closest("[data-assistant-chat-rename]");
+      if(renameChat){
+        openAssistantRename(renameChat.dataset.assistantChatRename);
+        return;
+      }
+      const deleteChat=event.target.closest("[data-assistant-chat-delete]");
+      if(deleteChat){
+        deleteAssistantConversation(deleteChat.dataset.assistantChatDelete);
+        return;
+      }
+      const openChat=event.target.closest("[data-assistant-chat-open]");
+      if(openChat){
+        if(openChat.closest("#assistant-widget-history"))openAssistantWidgetChat(openChat.dataset.assistantChatOpen);
+        else selectAssistantChat(openChat.dataset.assistantChatOpen);
+        return;
+      }
+      const prompt=event.target.closest("[data-assistant-prompt]");
+      if(prompt){
+        const input=$("#assistant-page-input");
+        input.value=prompt.dataset.assistantPrompt;
+        input.dispatchEvent(new Event("input",{bubbles:true}));
+        input.focus();
+        return;
+      }
       const action=event.target.closest("[data-assistant-chat-action]");
       if(!action)return;
-      if(action.dataset.assistantChatAction==="new")createAssistantConversation();
+      if(action.dataset.assistantChatAction==="new"){
+        createAssistantConversation();
+        if(action.closest("#assistant-widget"))setAssistantWidgetView("chat");
+      }
       if(action.dataset.assistantChatAction==="delete")deleteAssistantConversation();
     });
     function assistantHistoryForRequest(messages=assistantChatMessages) {
@@ -2077,7 +2434,13 @@
       if(!question||assistantChatBusy||!data)return;
       loadAssistantChat();
       const projectId=data.id;
-      const chat=activeAssistantChat(projectId);
+      let chat=activeAssistantChat(projectId);
+      const startsFromHistory=input.id==="assistant-widget-input"&&!$("#assistant-widget-history").hidden;
+      if(startsFromHistory||!chat){
+        createAssistantConversation();
+        chat=activeAssistantChat(projectId);
+        if(input.id==="assistant-widget-input")setAssistantWidgetView("chat");
+      }
       if(!chat)return;
       chat.messages.push({role:"user",content:question});
       if(chat.title==="แชทใหม่"){
@@ -2087,7 +2450,10 @@
       const requestChat=activeAssistantChat(projectId);
       const memories=makeAssistantMemories(question,requestChat?.messages||[]);
       renderAssistantChat();
-      document.querySelectorAll("#assistant-page-input,#assistant-widget-input").forEach(field=>field.value="");
+      document.querySelectorAll("#assistant-page-input,#assistant-widget-input").forEach(field=>{
+        field.value="";
+        field.style.height="";
+      });
       assistantChatBusy=true;
       document.querySelectorAll(".assistant-compose button").forEach(button=>button.disabled=true);
       renderAssistantChat();
@@ -2134,6 +2500,10 @@
       sendAssistantMessage($("#assistant-widget-input"));
     });
     document.querySelectorAll("#assistant-page-input,#assistant-widget-input").forEach(input=>{
+      input.addEventListener("input",()=>{
+        input.style.height="auto";
+        input.style.height=`${Math.min(input.scrollHeight,160)}px`;
+      });
       input.addEventListener("keydown",event=>{
         if(event.key!=="Enter"||event.shiftKey||event.isComposing)return;
         event.preventDefault();
@@ -2149,12 +2519,24 @@
       if(opening){
         loadAssistantChat();
         renderAssistantChat();
-        $("#assistant-widget-input").focus();
+        setAssistantWidgetView("history");
       }
+    });
+    $("#assistant-widget-back").addEventListener("click",()=>{
+      renderAssistantChat();
+      setAssistantWidgetView("history");
     });
     $("#assistant-close").addEventListener("click",()=>{
       $("#assistant-panel").hidden=true;
       $("#assistant-launcher").setAttribute("aria-expanded","false");
+    });
+    document.addEventListener("pointerdown",event=>{
+      const widget=$("#assistant-widget");
+      if(event.target.closest("dialog"))return;
+      if(!widget.hidden&&!widget.contains(event.target)){
+        $("#assistant-panel").hidden=true;
+        $("#assistant-launcher").setAttribute("aria-expanded","false");
+      }
     });
     const CUSTOM_SELECT_CLASSES=["map-select","group-filter","timeline-select","checkin-project-select","treatment-link-select","character-custom-select","first-appearance-select"];
     function closeCustomSelect(control) {
@@ -3965,6 +4347,108 @@
       renderLibrary();
       refreshAllCustomSelects();
     }
+    const PROJECT_TOOL_ORDER_KEY="fable-project-tool-order-v1";
+    function applyProjectToolOrder(order) {
+      const nav=$("#project-nav");
+      const buttons=[...nav.querySelectorAll("button[data-page]")];
+      const byPage=new Map(buttons.map(button=>[button.dataset.page,button]));
+      const preferred=Array.isArray(order)?order.filter((page,index)=>byPage.has(page)&&order.indexOf(page)===index):[];
+      [...preferred,...byPage.keys()].filter((page,index,pages)=>pages.indexOf(page)===index).forEach(page=>nav.append(byPage.get(page)));
+    }
+    function saveProjectToolOrder() {
+      try{
+        localStorage.setItem(PROJECT_TOOL_ORDER_KEY,JSON.stringify([...$("#project-nav").querySelectorAll("button[data-page]")].map(button=>button.dataset.page)));
+      }catch(error){
+        console.error("Could not save project tool order:",error);
+      }
+    }
+    function setupProjectToolReordering() {
+      const nav=$("#project-nav");
+      try{
+        const saved=JSON.parse(localStorage.getItem(PROJECT_TOOL_ORDER_KEY)||"[]");
+        applyProjectToolOrder(saved);
+      }catch(error){
+        console.error("Could not read project tool order:",error);
+      }
+      let activeDrag=null;
+      let suppressNextClick=false;
+      nav.addEventListener("pointerdown",event=>{
+        const button=event.target.closest("#project-nav button[data-page]");
+        if(!button||!event.isPrimary||event.button!==0||activeDrag)return;
+        const drag={button,pointerId:event.pointerId,startX:event.clientX,startY:event.clientY,offsetX:0,offsetY:0,moved:false,timer:null};
+        drag.timer=window.setTimeout(()=>{
+          const bounds=button.getBoundingClientRect();
+          drag.offsetX=event.clientX-bounds.left;
+          drag.offsetY=event.clientY-bounds.top;
+          drag.initialOrder=[...nav.querySelectorAll("button[data-page]")].map(item=>item.dataset.page).join(",");
+          drag.placeholder=document.createElement("span");
+          drag.placeholder.className="project-tool-placeholder";
+          drag.placeholder.setAttribute("aria-hidden","true");
+          drag.placeholder.style.cssText=`display:block;flex:0 0 ${bounds.width}px;width:${bounds.width}px;height:${bounds.height}px;visibility:hidden;pointer-events:none`;
+          nav.insertBefore(drag.placeholder,button);
+          drag.started=true;
+          button.classList.add("is-reordering");
+          button.style.position="fixed";
+          button.style.left=`${bounds.left}px`;
+          button.style.top=`${bounds.top}px`;
+          button.style.width=`${bounds.width}px`;
+          button.style.height=`${bounds.height}px`;
+          button.style.zIndex="1000";
+          button.style.pointerEvents="none";
+          button.style.boxShadow="0 8px 24px #0008";
+          button.style.cursor="grabbing";
+          button.style.opacity=".55";
+          document.body.append(button);
+        },380);
+        activeDrag=drag;
+      });
+      document.addEventListener("pointermove",event=>{
+        const drag=activeDrag;
+        if(!drag||event.pointerId!==drag.pointerId)return;
+        if(!drag.started){
+          if(Math.hypot(event.clientX-drag.startX,event.clientY-drag.startY)>8){
+            clearTimeout(drag.timer);
+            activeDrag=null;
+          }
+          return;
+        }
+        event.preventDefault();
+        drag.button.style.left=`${event.clientX-drag.offsetX}px`;
+        drag.button.style.top=`${event.clientY-drag.offsetY}px`;
+        const target=document.elementFromPoint(event.clientX,event.clientY)?.closest("#project-nav button[data-page]");
+        if(!target||target===drag.button)return;
+        const bounds=target.getBoundingClientRect();
+        const horizontal=getComputedStyle(nav).display==="flex";
+        const before=horizontal
+          ?event.clientX<bounds.left+bounds.width/2
+          :event.clientY<bounds.top+bounds.height/2;
+        nav.insertBefore(drag.placeholder,before?target:target.nextSibling);
+        drag.moved=drag.initialOrder!==[...nav.querySelectorAll("button[data-page],.project-tool-placeholder")].map(item=>item.dataset.page||drag.button.dataset.page).join(",");
+      });
+      const finishDrag=event=>{
+        const drag=activeDrag;
+        if(!drag||event.pointerId!==drag.pointerId)return;
+        clearTimeout(drag.timer);
+        if(drag.started){
+          nav.insertBefore(drag.button,drag.placeholder);
+          drag.placeholder.remove();
+          drag.button.classList.remove("is-reordering");
+          drag.button.style.cssText="";
+          if(drag.moved)saveProjectToolOrder();
+          suppressNextClick=true;
+          window.setTimeout(()=>{suppressNextClick=false;},0);
+        }
+        activeDrag=null;
+      };
+      document.addEventListener("pointerup",finishDrag);
+      document.addEventListener("pointercancel",finishDrag);
+      nav.addEventListener("click",event=>{
+        if(!suppressNextClick)return;
+        suppressNextClick=false;
+        event.preventDefault();
+        event.stopImmediatePropagation();
+      },true);
+    }
     function openNovel(id) {
       data = workspace.projects.find(project => project.id === id) || null;
       if (!data) return;
@@ -4016,6 +4500,7 @@
     $("#library-link").addEventListener("click", () => { data = null; workspace.activeProjectId = null; showPage("library"); });
     $("#crumb-library").addEventListener("click", () => { data = null; workspace.activeProjectId = null; showPage("library"); });
     document.querySelectorAll("#project-nav [data-page], [data-goto]").forEach(button => button.addEventListener("click", () => showPage(button.dataset.page || button.dataset.goto)));
+    setupProjectToolReordering();
     const addCharacter=()=>openCharacter();
     $("#add-character-record").addEventListener("click",addCharacter);
     $("#add-character-bottom").addEventListener("click",addCharacter);
