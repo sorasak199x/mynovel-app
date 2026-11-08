@@ -3301,6 +3301,39 @@
         ${sectionContents}${relatedNav}`;
       applyWorldbuildingSearch();
     }
+    function worldbuildingHistoryUrl(entry) {
+      return `#worldbuilding/${encodeURIComponent(entry.projectId)}/${entry.type}/${encodeURIComponent(entry.id)}`;
+    }
+    function navigateWorldbuildingEntry(type,id,readMode=worldbuildingReadMode) {
+      if(!data||!id)return;
+      const currentEntry=activeWorldbuildingEntry;
+      const targetEntry={projectId:data.id,type,id,readMode};
+      const route=history.state?.fableWorldbuilding;
+      const currentRouteIsCurrent=route?.projectId===data.id&&route.type===currentEntry?.type&&route.id===currentEntry?.id;
+      if(currentEntry&&!currentRouteIsCurrent){
+        const currentState={projectId:data.id,type:currentEntry.type,id:currentEntry.id,readMode:worldbuildingReadMode};
+        history.replaceState({...history.state,fableWorldbuilding:currentState},"",worldbuildingHistoryUrl(currentState));
+      }
+      if(currentEntry?.type!==type||currentEntry.id!==id){
+        history.pushState({...history.state,fableWorldbuilding:targetEntry},"",worldbuildingHistoryUrl(targetEntry));
+      }
+      activeWorldbuildingEntry={type,id};
+      worldbuildingReadMode=readMode;
+      renderWorldbuilding();
+      window.scrollTo({top:0,behavior:"smooth"});
+    }
+    window.addEventListener("popstate",event=>{
+      const route=event.state?.fableWorldbuilding;
+      if(!route||route.projectId!==data?.id)return;
+      const entryExists=route.type==="section"
+        ?data.worldbuilding.customSections.some(section=>section.id===route.id)
+        :route.type==="detail"&&data.worldbuilding.customSections.some(section=>section.details.some(detail=>detail.id===route.id));
+      if(!entryExists)return;
+      activeWorldbuildingEntry={type:route.type,id:route.id};
+      worldbuildingReadMode=Boolean(route.readMode);
+      if(!$("#worldbuilding").classList.contains("active"))showPage("worldbuilding");
+      else renderWorldbuilding();
+    });
     function applyWorldbuildingSearch() {
       const query=$("#worldbuilding-search").value.trim().toLocaleLowerCase();
       const status=$("#worldbuilding-search-status");
@@ -4743,10 +4776,8 @@
       if(!data)return;
       const searchResult=event.target.closest("[data-worldbuilding-search-type]");
       if(searchResult){
-        activeWorldbuildingEntry={type:searchResult.dataset.worldbuildingSearchType,id:searchResult.dataset.worldbuildingSearchId};
         $("#worldbuilding-search").value="";
-        applyWorldbuildingSearch();
-        renderWorldbuilding();
+        navigateWorldbuildingEntry(searchResult.dataset.worldbuildingSearchType,searchResult.dataset.worldbuildingSearchId);
         return;
       }
       const modeToggle=event.target.closest("[data-worldbuilding-toggle-mode]");
@@ -4757,8 +4788,7 @@
       }
       const wikiLink=event.target.closest("[data-worldbuilding-link-id]");
       if(wikiLink){
-        activeWorldbuildingEntry={type:wikiLink.dataset.worldbuildingLinkType,id:wikiLink.dataset.worldbuildingLinkId};
-        renderWorldbuilding();
+        navigateWorldbuildingEntry(wikiLink.dataset.worldbuildingLinkType,wikiLink.dataset.worldbuildingLinkId);
         return;
       }
       const createLink=event.target.closest("[data-worldbuilding-create-link]");
@@ -4770,23 +4800,19 @@
         if(!section)return;
         const detail={id:`worldbuilding-detail-${Date.now()}-${Math.random().toString(36).slice(2,7)}`,title:createLink.dataset.worldbuildingCreateLink,content:""};
         section.details.push(detail);
-        activeWorldbuildingEntry={type:"detail",id:detail.id};
-        worldbuildingReadMode=false;
         save(700);
-        renderWorldbuilding();
+        navigateWorldbuildingEntry("detail",detail.id,false);
         $(`[data-worldbuilding-detail-title="${detail.id}"]`)?.focus();
         return;
       }
       const sectionLink=event.target.closest("[data-worldbuilding-select-section]");
       if(sectionLink){
-        activeWorldbuildingEntry={type:"section",id:sectionLink.dataset.worldbuildingSelectSection};
-        renderWorldbuilding();
+        navigateWorldbuildingEntry("section",sectionLink.dataset.worldbuildingSelectSection);
         return;
       }
       const detailLink=event.target.closest("[data-worldbuilding-select-detail]");
       if(detailLink){
-        activeWorldbuildingEntry={type:"detail",id:detailLink.dataset.detailId};
-        renderWorldbuilding();
+        navigateWorldbuildingEntry("detail",detailLink.dataset.detailId);
       }
     });
     $("#worldbuilding").addEventListener("input",event=>{
