@@ -624,6 +624,77 @@
       .card { padding:17px; }
       .character-toolbar { align-items:flex-start; flex-direction:column; }
     }
+    @media (max-width: 600px) {
+      .app { display:block; min-height:100dvh; }
+      .sidebar {
+        position:sticky; top:0; z-index:45; width:100%; height:auto; max-height:45dvh; overflow-y:auto;
+        flex:none; align-items:stretch; padding:calc(8px + env(safe-area-inset-top)) 12px 8px;
+        border-right:0; border-bottom:1px solid #303431; overscroll-behavior:contain;
+      }
+      .brand { width:100%; padding:0 4px 8px; }
+      .brand-copy,.workspace-label,.nav-label,.nav-text,.side-bottom { display:block; }
+      .brand-copy { min-width:0; }
+      .workspace-label { padding:0 4px 5px; }
+      .nav-label { padding:7px 4px 4px; }
+      .nav {
+        display:flex; width:100%; min-width:0; gap:5px; overflow-x:auto; overscroll-behavior-x:contain;
+        scrollbar-width:thin; padding:0 0 3px;
+      }
+      .nav button,.nav.nested button {
+        flex:0 0 auto; width:auto; min-height:36px; justify-content:flex-start; gap:7px; padding:7px 9px;
+        white-space:nowrap; font-size:11px;
+      }
+      .nav-icon { width:16px; flex:none; font-size:14px; }
+      .nav.nested {
+        width:100%; min-width:0; gap:4px; padding:5px 0 3px; margin:4px 0 0;
+        border:0; border-top:1px solid #3a403a;
+      }
+      .nav.nested .nav-icon { font-size:13px; }
+      .side-bottom { margin-top:0; }
+      .writing-tip { display:none; }
+      .account { padding:7px 4px 0; gap:8px; font-size:11px; }
+      .account .avatar { width:25px; height:25px; }
+      .account-signout { min-height:32px; padding:5px 4px; }
+      .main { width:100%; }
+      .topbar { min-width:0; gap:8px; padding:0 12px; }
+      .crumb { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+      .save-state { flex:none; font-size:10px; }
+      .content { width:100%; min-width:0; padding:20px 12px calc(34px + env(safe-area-inset-bottom)); }
+      .page-heading,.heading-actions,.map-actions,.character-toolbar,.worldbuilding-toolbar { min-width:0; width:100%; }
+      .heading-actions .button { flex:1 1 auto; }
+      .overview-grid,.calendar-layout,.chapter-layout,.map-workspace { grid-template-columns:minmax(0,1fr); }
+      .card { min-width:0; }
+      .two-fields { grid-template-columns:minmax(0,1fr); gap:0; }
+      .field input,.field textarea,.field select,.custom-select-trigger,.assistant-compose textarea { font-size:16px; }
+      .worldbuilding-toolbar { flex-wrap:wrap; }
+      .worldbuilding-search-wrap { flex:1 1 190px; min-width:0; }
+      .worldbuilding-search { width:100%; }
+      .map-toolbar,.map-editor-toolbar,.character-toolbar,.map-actions { max-width:100%; }
+      .map-sidebar { grid-template-columns:minmax(0,1fr); }
+      .map-canvas-wrap { min-height:260px; }
+      .board { height:62dvh; min-height:430px; max-height:720px; }
+      .checklist-row { grid-template-columns:20px minmax(0,1fr) auto 28px; gap:6px; padding:8px 7px; }
+      .checklist-title { overflow-wrap:anywhere; }
+      .meter-caption { gap:8px; }
+      .calendar-grid { gap:3px; }
+      .calendar-day { min-height:44px; padding:4px; font-size:11px; }
+      .chapter-sidebar { min-width:0; }
+      .chapter-editor textarea { min-height:48dvh; }
+      .timeline-toolbar { align-items:flex-start; flex-direction:column; }
+      .timeline-tools { width:100%; }
+      .timeline-select,.timeline-name-input,.custom-select-timeline-select { min-width:0; max-width:100%; }
+      .assistant-page-card { min-height:calc(72dvh - 30px); }
+      .assistant-messages { min-height:180px; padding:12px; }
+      .assistant-compose { grid-template-columns:minmax(0,1fr) auto; gap:6px; padding:8px; }
+      .assistant-compose textarea { min-width:0; padding:9px; }
+      .assistant-compose button { padding:8px 10px; }
+      .assistant-widget { right:12px; bottom:calc(12px + env(safe-area-inset-bottom)); }
+      .assistant-panel { right:0; bottom:64px; width:calc(100vw - 24px); height:min(660px,calc(100dvh - 90px - env(safe-area-inset-top))); }
+      dialog { max-height:calc(100dvh - 24px); overflow:auto; }
+      .dialog-inner { padding:18px; }
+      .dialog-actions { flex-wrap:wrap; gap:10px; }
+      .dialog-actions-right { flex-wrap:wrap; }
+    }
   </style>
 </head>
 <body class="auth-required">
@@ -1616,6 +1687,7 @@
           `เพศ: ${clean(person.sex)}`,
           `รายละเอียด: ${clean(person.details)}`,
           `ปรากฏตัวครั้งแรก: ${clean(person.firstAppearance)}`,
+          `หมายเหตุ: ${clean(person.notes)}`,
           `หมายเหตุและข้อมูลเพิ่มเติม: ${fields.join(" · ")}`
         ].filter(value=>!value.endsWith(": ")).join("\n");
         });
@@ -1632,9 +1704,12 @@
         const maps=(data.maps?.items||[]).map(map=>[
           `แผนที่: ${clean(map.name)}`,
           `รายละเอียดแผนที่: ${clean(map.description)}`,
-          ...(map.objects||[]).filter(item=>[item.name,item.description,item.history,item.significance,item.routes,item.secrets,item.region,item.governance].some(value=>clean(value))).map(item=>[
+          ...(map.objects||[]).filter(item=>[item.name,item.subtitle,item.description,item.history,item.significance,item.routes,item.secrets,item.region,item.population,item.climate,item.governance].some(value=>clean(value))).map(item=>[
             `${clean(item.name)||"สถานที่ไม่มีชื่อ"} (${clean(item.type)||clean(item.kind)})`,
+            `คำบรรยายสั้น: ${clean(item.subtitle)}`,
             `ภูมิภาค: ${clean(item.region)}`,
+            `ประชากร: ${clean(item.population)}`,
+            `ภูมิอากาศ: ${clean(item.climate)}`,
             `ผู้ปกครอง: ${clean(item.governance)}`,
             `ประวัติ: ${clean(item.history)}`,
             `ความสำคัญ: ${clean(item.significance)}`,
@@ -1667,9 +1742,16 @@
         `ไทม์ไลน์: ${clean(timeline.name)}`,
         ...(timeline.events||[]).map((item,index)=>[
           `เหตุการณ์ ${index+1}: วันที่ ${clean(item.date)} · ช่วงเวลา ${clean(item.era)}`,
-          `รายละเอียด: ${clean(item.details)}`,
-          `หมายเหตุ: ${clean(item.notes)}`
-        ].join("\n"))
+            `เวลา: ${clean(item.when)}`,
+            `ชื่อเหตุการณ์: ${clean(item.title)}`,
+            `ตัวละครที่เกี่ยวข้อง: ${clean(item.cast)}`,
+            `รายละเอียด: ${clean(item.details)}`,
+            `หมายเหตุ: ${clean(item.notes)}`,
+            `ตอนทรีตเมนต์ที่เชื่อมโยง: ${(item.treatmentEpisodeIds||[]).map(id=>{
+              const episode=(treatment.episodes||[]).find(candidate=>candidate.id===id);
+              return episode?.title||id;
+            }).join(", ")}`
+          ].join("\n"))
       ].join("\n"));
       addSection("ไทม์ไลน์ทุกชุด",timelines);
       const chapters=(data.chapters||[]).map((chapter,index)=>[
