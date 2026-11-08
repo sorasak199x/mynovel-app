@@ -33,6 +33,7 @@
     button, input, textarea, select { font: inherit; }
     button { color: inherit; cursor: pointer; }
     .app { display: flex; min-height: 100vh; }
+    body.auth-required .app { visibility:hidden; }
     .sidebar {
       width: 248px; flex: 0 0 248px; padding: 26px 16px 18px;
       background: var(--sidebar); border-right: 1px solid #303431;
@@ -63,8 +64,26 @@
     .writing-tip { padding:14px; border:1px solid var(--line); border-radius:12px; background:#222623; }
     .writing-tip strong { display:block; color:var(--accent); font-size:12px; margin-bottom:5px; }
     .writing-tip p { margin:0; color:var(--muted); font-size:12px; }
-    .account { display:flex; align-items:center; gap:10px; padding:18px 8px 0; color:#c6cbc4; font-size:12px; }
+    .account { display:flex; align-items:center; gap:8px; padding:18px 8px 0; color:#c6cbc4; font-size:12px; flex-wrap:wrap; }
     .avatar { width:30px; height:30px; display:grid; place-items:center; border-radius:50%; background:#41483f; color:var(--accent); }
+    .account-name { min-width:0; flex:1; overflow-wrap:anywhere; }
+    .account-signout { border:0; background:transparent; color:var(--muted); padding:4px 0; font-size:11px; }
+    .account-signout:hover { color:var(--text); }
+    .auth-gate { position:fixed; z-index:1000; inset:0; display:grid; place-items:center; overflow:auto; padding:24px; background:#151816ed; }
+    .auth-gate[hidden] { display:none; }
+    .auth-card { width:min(440px,100%); padding:32px; border:1px solid #444b43; border-radius:16px; background:#252a26; box-shadow:0 20px 70px #0009; }
+    .auth-brand { display:flex; align-items:center; gap:11px; margin-bottom:22px; }
+    .auth-card h1 { font-size:22px; margin:0 0 8px; }
+    .auth-card p { color:var(--muted); margin:0 0 18px; }
+    .google-signin { display:flex; align-items:center; justify-content:center; gap:11px; width:100%; min-height:46px; border:1px solid #d5d9d4; border-radius:8px; background:#fff; color:#242825; font-weight:650; }
+    .google-signin[hidden] { display:none; }
+    .google-signin:hover { background:#f1f3f1; }
+    .google-mark { font:700 19px/1 Arial,sans-serif; color:#4285f4; }
+    .auth-message[role="alert"] { color:#efaaa1; }
+    .auth-setup-hint { display:block; margin-top:14px; color:var(--accent); font-size:12px; }
+    .auth-setup-hint[hidden] { display:none; }
+    .auth-retry { margin-top:10px; }
+    .auth-retry[hidden] { display:none; }
     .main { flex:1; min-width:0; }
     .topbar { height:68px; padding:0 40px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #303431; }
     .crumb { color:var(--muted); font-size:12px; }
@@ -607,7 +626,7 @@
     }
   </style>
 </head>
-<body>
+<body class="auth-required">
   <div class="app">
     <aside class="sidebar">
       <div class="brand">
@@ -632,7 +651,7 @@
       </nav>
       <div class="side-bottom">
         <div class="writing-tip"><strong>✦ พื้นที่ของคุณ</strong><p>ทุกเรื่องมีพื้นที่และเครื่องมือเป็นของตัวเอง</p></div>
-        <div class="account"><div class="avatar">น</div><span>นักเขียนของคุณ</span></div>
+        <div class="account"><div class="avatar" id="account-avatar">?</div><span class="account-name" id="account-name">ยังไม่ได้เข้าสู่ระบบ</span><button class="account-signout" id="signout-button" type="button" hidden>ออกจากระบบ</button></div>
       </div>
     </aside>
     <main class="main">
@@ -1039,9 +1058,23 @@
       <div class="dialog-actions"><div class="dialog-actions-right"><button class="button" id="cancel-delete-novel" type="button">ยกเลิก</button><button class="button delete-button" id="confirm-delete-novel" type="button" disabled>ลบนิยายถาวร</button></div></div>
     </div>
   </dialog>
+  <div class="auth-gate" id="auth-gate" role="dialog" aria-modal="true" aria-labelledby="auth-title">
+    <section class="auth-card">
+      <div class="auth-brand"><div class="brand-mark">f</div><div><div class="brand-name">fable</div><div class="brand-note">your story, taking shape</div></div></div>
+      <h1 id="auth-title">พื้นที่เขียนนิยายของคุณ</h1>
+      <p class="auth-message" id="auth-message">กำลังเชื่อมต่อระบบบัญชี...</p>
+      <button class="google-signin" id="google-signin" type="button" disabled><span class="google-mark" aria-hidden="true">G</span><span>เข้าสู่ระบบด้วย Google</span></button>
+      <button class="button auth-retry" id="auth-retry" type="button" hidden>ลองเชื่อมต่ออีกครั้ง</button>
+      <button class="button auth-retry" id="auth-signout" type="button" hidden>ออกจากระบบ</button>
+      <a class="auth-setup-hint" id="auth-setup-hint" href="FIREBASE_SETUP.md" hidden>ดูขั้นตอนตั้งค่า Firebase</a>
+    </section>
+  </div>
+  <script src="firebase-config.js"></script>
   <script>
     const STORAGE_KEY = "fable-novel-projects-v2";
     const LEGACY_STORAGE_KEY = "fable-novel-workspace-v1";
+    const ACCOUNT_CACHE_PREFIX = `${STORAGE_KEY}:user:`;
+    const LEGACY_CACHE_OWNER_KEY = "fable-novel-cache-owner-v1";
     const palette = ["#f09a91", "#f0ad72", "#e7c96f", "#b8d779", "#83c995", "#71c9c5", "#78bfe3", "#9aa7f0", "#c19ae8", "#e99bc4"];
     const genreCategories = [
       "แฟนตาซี","โรแมนซ์","วิทยาศาสตร์","สืบสวน","ระทึกขวัญ","สยองขวัญ",
@@ -1340,6 +1373,7 @@
       return { projects:[], activeProjectId:null };
     }
     const workspace = loadWorkspace();
+    workspace.assistantChats = {};
     let data = null;
     let activeMapId = null;
     let graphZoom = 0.72;
@@ -1420,6 +1454,15 @@
     let calendarMonth = new Date();
     calendarMonth.setDate(1);
     let saveTimer;
+    let firebaseAuth = null;
+    let firebaseDatabase = null;
+    let firebaseDatabaseApi = null;
+    let authenticatedUser = null;
+    let stopWorkspaceListener = null;
+    let cloudWriteQueue = Promise.resolve();
+    let authGeneration = 0;
+    let cloudWorkspaceLoaded = false;
+    let lastCloudWorkspace = null;
     let pendingDeleteAction = null;
     let timelineNameBeforeEdit = "";
     let timelineSummaryTimer = null;
@@ -1431,6 +1474,46 @@
       return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`;
     }
     const ASSISTANT_CHAT_KEY_PREFIX="fable-assistant-chat-v1:";
+    function sanitizeAssistantMessages(messages) {
+      return Array.isArray(messages)
+        ? messages.filter(message=>message&&["user","assistant"].includes(message.role)&&typeof message.content==="string").slice(-40)
+        : [];
+    }
+    function sanitizeAssistantChats(chats) {
+      if(!chats||typeof chats!=="object"||Array.isArray(chats))return {};
+      return Object.fromEntries(Object.entries(chats).filter(([id])=>typeof id==="string").map(([id,messages])=>[id,sanitizeAssistantMessages(messages)]));
+    }
+    function loadLocalAssistantChats() {
+      const chats={};
+      try{
+        for(let index=0;index<localStorage.length;index++){
+          const key=localStorage.key(index);
+          if(!key?.startsWith(ASSISTANT_CHAT_KEY_PREFIX))continue;
+          const projectId=key.slice(ASSISTANT_CHAT_KEY_PREFIX.length);
+          try{
+            chats[projectId]=sanitizeAssistantMessages(JSON.parse(localStorage.getItem(key)||"[]"));
+          }catch(error){
+            console.error(`Could not read saved assistant chat for ${projectId}:`,error);
+          }
+        }
+      }catch(error){
+        console.error("Could not read saved assistant chats:",error);
+      }
+      return chats;
+    }
+    function loadWorkspaceForAccount(uid) {
+      const cached=localStorage.getItem(ACCOUNT_CACHE_PREFIX+uid);
+      if(cached){
+        const parsed=JSON.parse(cached);
+        return normalizeCloudWorkspace(parsed);
+      }
+      const owner=localStorage.getItem(LEGACY_CACHE_OWNER_KEY);
+      if(owner&&owner!==uid)return {projects:[],activeProjectId:null,assistantChats:{}};
+      const legacy=loadWorkspace();
+      legacy.assistantChats=loadLocalAssistantChats();
+      return normalizeCloudWorkspace(legacy);
+    }
+    workspace.assistantChats=loadLocalAssistantChats();
     let assistantChatProjectId=null;
     let assistantChatMessages=[];
     let assistantChatBusy=false;
@@ -1439,10 +1522,8 @@
       if(assistantChatProjectId===data.id)return;
       assistantChatProjectId=data.id;
       try{
-        const saved=JSON.parse(localStorage.getItem(ASSISTANT_CHAT_KEY_PREFIX+data.id)||"[]");
-        assistantChatMessages=Array.isArray(saved)?saved.filter(message=>
-          message&&["user","assistant"].includes(message.role)&&typeof message.content==="string"
-        ).slice(-40):[];
+        const saved=workspace.assistantChats?.[data.id]??(authenticatedUser?[]:JSON.parse(localStorage.getItem(ASSISTANT_CHAT_KEY_PREFIX+data.id)||"[]"));
+        assistantChatMessages=sanitizeAssistantMessages(saved);
       }catch(error){
         console.error("Could not read saved assistant chat:",error);
         assistantChatMessages=[];
@@ -1453,7 +1534,10 @@
       if(!data)return;
       try{
         assistantChatMessages=assistantChatMessages.slice(-40);
-        localStorage.setItem(ASSISTANT_CHAT_KEY_PREFIX+data.id,JSON.stringify(assistantChatMessages));
+        if(!authenticatedUser)localStorage.setItem(ASSISTANT_CHAT_KEY_PREFIX+data.id,JSON.stringify(assistantChatMessages));
+        if(!workspace.assistantChats)workspace.assistantChats={};
+        workspace.assistantChats[data.id]=assistantChatMessages;
+        save();
       }catch(error){
         console.error("Could not save assistant chat:",error);
         setAssistantStatus("บันทึกประวัติแชทในเครื่องไม่สำเร็จ");
@@ -1849,16 +1933,365 @@
       selects.forEach(refreshCustomSelect);
     });
     customSelectObserver.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:["hidden","disabled"]});
+    function workspaceSnapshot() {
+      return {
+        projects:workspace.projects,
+        activeProjectId:workspace.activeProjectId,
+        assistantChats:sanitizeAssistantChats(workspace.assistantChats)
+      };
+    }
+    function normalizeCloudWorkspace(value) {
+      if(!value||typeof value!=="object"||!Array.isArray(value.projects)||value.projects.some(project=>!project||typeof project!=="object"||typeof project.id!=="string")){
+        throw new Error("ข้อมูลบนคลาวด์มีรูปแบบไม่ถูกต้อง");
+      }
+      const projects=value.projects.map(normalizeNovel);
+      const rawChats=value.assistantChats;
+      const chatRecords=Array.isArray(rawChats)?rawChats
+        : rawChats&&typeof rawChats==="object"&&!Array.isArray(rawChats)&&Object.values(rawChats).every(entry=>entry&&typeof entry.projectId==="string")
+          ? Object.values(rawChats)
+          : null;
+      const assistantChats=chatRecords
+        ? Object.fromEntries(chatRecords.filter(entry=>typeof entry.projectId==="string").map(entry=>[entry.projectId,sanitizeAssistantMessages(entry.messages)]))
+        : sanitizeAssistantChats(value.assistantChats);
+      return {
+        projects,
+        activeProjectId:projects.some(project=>project.id===value.activeProjectId)?value.activeProjectId:null,
+        assistantChats
+      };
+    }
+    function cloudWorkspacePayload(value) {
+      return {
+        ...value,
+        assistantChats:Object.entries(sanitizeAssistantChats(value.assistantChats)).map(([projectId,messages])=>({projectId,messages}))
+      };
+    }
+    function cloneWorkspaceSnapshot(value) {
+      return JSON.parse(JSON.stringify(value));
+    }
+    function mergeConcurrentWorkspaces(base, local, remote) {
+      const baseProjects=new Map((base?.projects||[]).map(project=>[project.id,project]));
+      const localProjects=new Map(local.projects.map(project=>[project.id,project]));
+      const remoteProjects=new Map(remote.projects.map(project=>[project.id,project]));
+      const projectIds=new Set([...localProjects.keys(),...remoteProjects.keys(),...baseProjects.keys()]);
+      const mergedProjects=[];
+      let conflicts=0;
+      projectIds.forEach(id=>{
+        const baseProject=baseProjects.get(id)||null;
+        const localProject=localProjects.get(id)||null;
+        const remoteProject=remoteProjects.get(id)||null;
+        const localChanged=JSON.stringify(localProject)!==JSON.stringify(baseProject);
+        const remoteChanged=JSON.stringify(remoteProject)!==JSON.stringify(baseProject);
+        if(localChanged&&remoteChanged&&JSON.stringify(localProject)!==JSON.stringify(remoteProject)){
+          if(localProject)mergedProjects.push(localProject);
+          if(remoteProject){
+            const copyId=`${id}-copy-${Date.now()}-${Math.random().toString(36).slice(2,6)}`;
+            mergedProjects.push({...remoteProject,id:copyId,title:`${remoteProject.title||"นิยายไม่มีชื่อ"} (สำเนาจากอุปกรณ์อื่น)`});
+            if(remote.assistantChats?.[id])remote.assistantChats[copyId]=remote.assistantChats[id];
+          }
+          conflicts++;
+          return;
+        }
+        const chosen=localChanged?localProject:remoteProject;
+        if(chosen)mergedProjects.push(chosen);
+      });
+      const baseActiveId=base?.activeProjectId||null;
+      const activeProjectId=local.activeProjectId!==baseActiveId?local.activeProjectId:remote.activeProjectId;
+      const baseChats=base?.assistantChats||{};
+      const localChats=local.assistantChats||{};
+      const remoteChats=remote.assistantChats||{};
+      const assistantChats={};
+      new Set([...Object.keys(baseChats),...Object.keys(localChats),...Object.keys(remoteChats)]).forEach(id=>{
+        const baseMessages=baseChats[id]||null;
+        const localMessages=localChats[id]||null;
+        const remoteMessages=remoteChats[id]||null;
+        const localChanged=JSON.stringify(localMessages)!==JSON.stringify(baseMessages);
+        const remoteChanged=JSON.stringify(remoteMessages)!==JSON.stringify(baseMessages);
+        const chosen=localChanged?localMessages:remoteMessages;
+        if(chosen)assistantChats[id]=chosen;
+      });
+      return {
+        workspace:{projects:mergedProjects,activeProjectId,assistantChats},
+        conflicts
+      };
+    }
+    function cacheWorkspaceLocally() {
+      try{
+        const cacheKey=authenticatedUser?ACCOUNT_CACHE_PREFIX+authenticatedUser.uid:STORAGE_KEY;
+        localStorage.setItem(cacheKey,JSON.stringify(workspaceSnapshot()));
+      }catch(error){
+        console.error("Could not cache novel workspace locally:",error);
+        $("#save-label").textContent="ซิงก์คลาวด์แล้ว แต่บันทึกในเครื่องไม่สำเร็จ";
+      }
+    }
+    function applyCloudWorkspace(value) {
+      const page=document.querySelector(".page.active")?.id||"library";
+      const previousDataJson=data?JSON.stringify(data):null;
+      const cloudWorkspace=normalizeCloudWorkspace(value);
+      workspace.projects=cloudWorkspace.projects;
+      workspace.activeProjectId=cloudWorkspace.activeProjectId;
+      workspace.assistantChats=cloudWorkspace.assistantChats;
+      data=workspace.projects.find(project=>project.id===workspace.activeProjectId)||null;
+      assistantChatProjectId=null;
+      cacheWorkspaceLocally();
+      if(page!=="library"&&data&&JSON.stringify(data)===previousDataJson){
+        renderLibrary();
+      }else{
+        showPage(page);
+      }
+    }
+    function updateAuthGate(message,{error=false,allowSignin=false,allowRetry=false,allowSignout=false,showSetup=false}={}) {
+      $("#auth-message").textContent=message;
+      $("#auth-message").toggleAttribute("role",error);
+      if(error)$("#auth-message").setAttribute("role","alert");
+      $("#google-signin").hidden=!allowSignin;
+      $("#google-signin").disabled=!allowSignin;
+      $("#auth-retry").hidden=!allowRetry;
+      $("#auth-signout").hidden=!allowSignout;
+      $("#auth-setup-hint").hidden=!showSetup;
+      $("#auth-gate").hidden=false;
+    }
+    function reportCloudError(error) {
+      console.error("Could not sync Fable workspace:",error);
+      const message=error?.code==="PERMISSION_DENIED"
+        ? "เข้าใช้ฐานข้อมูลไม่ได้ กรุณาตรวจสอบว่าเปิด Realtime Database และเผยแพร่ database.rules.json แล้ว"
+        : `ซิงก์ข้อมูลไม่สำเร็จ: ${error?.message||"กรุณาตรวจสอบการเชื่อมต่อแล้วลองอีกครั้ง"}`;
+      if(authenticatedUser){
+        $("#save-label").textContent="ซิงก์ไม่สำเร็จ";
+        updateAuthGate(message,{error:true,allowRetry:true,allowSignout:true});
+      }else{
+        updateAuthGate(message,{error:true,allowSignin:true});
+      }
+    }
+    function applyCurrentWorkspaceSnapshot() {
+      const snapshot=workspaceSnapshot();
+      workspace.projects=snapshot.projects;
+      workspace.activeProjectId=snapshot.activeProjectId;
+      workspace.assistantChats=snapshot.assistantChats;
+      cacheWorkspaceLocally();
+      return snapshot;
+    }
+    async function loadSignedInWorkspace(user,generation) {
+      const userWorkspaceRef=firebaseDatabaseApi.ref(firebaseDatabase,`users/${user.uid}/workspace`);
+      const saved=await firebaseDatabaseApi.get(userWorkspaceRef);
+      if(generation!==authGeneration||authenticatedUser?.uid!==user.uid)return;
+      if(saved.exists()){
+        const remoteWorkspace=normalizeCloudWorkspace(saved.val());
+        applyCloudWorkspace(remoteWorkspace);
+        if(!localStorage.getItem(LEGACY_CACHE_OWNER_KEY))localStorage.setItem(LEGACY_CACHE_OWNER_KEY,user.uid);
+        lastCloudWorkspace=cloneWorkspaceSnapshot(remoteWorkspace);
+      }else{
+        applyCloudWorkspace(loadWorkspaceForAccount(user.uid));
+        const initialWorkspace=applyCurrentWorkspaceSnapshot();
+        if(!localStorage.getItem(LEGACY_CACHE_OWNER_KEY))localStorage.setItem(LEGACY_CACHE_OWNER_KEY,user.uid);
+        await firebaseDatabaseApi.set(userWorkspaceRef,cloudWorkspacePayload(initialWorkspace));
+        if(generation!==authGeneration||authenticatedUser?.uid!==user.uid)return;
+        lastCloudWorkspace=cloneWorkspaceSnapshot(initialWorkspace);
+      }
+      if(stopWorkspaceListener)stopWorkspaceListener();
+      stopWorkspaceListener=firebaseDatabaseApi.onValue(userWorkspaceRef,snapshot=>{
+        if(generation!==authGeneration||authenticatedUser?.uid!==user.uid||!snapshot.exists())return;
+        try{
+          const remoteWorkspace=normalizeCloudWorkspace(snapshot.val());
+          const localWorkspace=workspaceSnapshot();
+          const remoteJson=JSON.stringify(remoteWorkspace);
+          if(remoteJson===JSON.stringify(localWorkspace))return;
+          if(JSON.stringify(localWorkspace)!==JSON.stringify(lastCloudWorkspace)){
+            const merged=mergeConcurrentWorkspaces(lastCloudWorkspace,localWorkspace,remoteWorkspace);
+            lastCloudWorkspace=cloneWorkspaceSnapshot(remoteWorkspace);
+            applyCloudWorkspace(merged.workspace);
+            if(merged.conflicts){
+              $("#save-label").textContent="พบการแก้ไขพร้อมกัน—เก็บสำเนาไว้แล้ว";
+              save(0);
+            }else if(JSON.stringify(merged.workspace)!==remoteJson){
+              save(0);
+            }
+          }else{
+            lastCloudWorkspace=cloneWorkspaceSnapshot(remoteWorkspace);
+            applyCloudWorkspace(remoteWorkspace);
+          }
+        }catch(error){
+          reportCloudError(error);
+        }
+      },reportCloudError);
+      $("#save-label").textContent="ซิงก์ข้อมูลแล้ว";
+      cloudWorkspaceLoaded=true;
+      document.body.classList.remove("auth-required");
+      $("#auth-gate").hidden=true;
+    }
+    async function handleAuthStateChange(user) {
+      const generation=++authGeneration;
+      if(authenticatedUser?.uid!==user?.uid){
+        cloudWorkspaceLoaded=false;
+        lastCloudWorkspace=null;
+      }
+      if(stopWorkspaceListener){
+        stopWorkspaceListener();
+        stopWorkspaceListener=null;
+      }
+      authenticatedUser=user;
+      if(!user){
+        document.body.classList.add("auth-required");
+        cloudWorkspaceLoaded=false;
+        lastCloudWorkspace=null;
+        $("#account-name").textContent="ยังไม่ได้เข้าสู่ระบบ";
+        $("#account-avatar").textContent="?";
+        $("#signout-button").hidden=true;
+        updateAuthGate("เข้าสู่ระบบด้วย Google เพื่อซิงก์ข้อมูลนิยายข้ามอุปกรณ์",{allowSignin:true});
+        return;
+      }
+      const accountName=user.displayName||user.email||"บัญชี Google";
+      $("#account-name").textContent=user.email||accountName;
+      $("#account-avatar").textContent=accountName.slice(0,1).toUpperCase();
+      $("#signout-button").hidden=false;
+      updateAuthGate("กำลังโหลดข้อมูลของบัญชี...");
+      try{
+        await loadSignedInWorkspace(user,generation);
+      }catch(error){
+        if(generation===authGeneration)reportCloudError(error);
+      }
+    }
+    async function retryCloudSync() {
+      if(!authenticatedUser){
+        await initializeCloudSync();
+        return;
+      }
+      if(!cloudWorkspaceLoaded){
+        await handleAuthStateChange(authenticatedUser);
+        return;
+      }
+      const user=authenticatedUser;
+      const userWorkspaceRef=firebaseDatabaseApi.ref(firebaseDatabase,`users/${user.uid}/workspace`);
+      try{
+        const saved=await firebaseDatabaseApi.get(userWorkspaceRef);
+        if(authenticatedUser?.uid!==user.uid)return;
+        const localWorkspace=workspaceSnapshot();
+        let workspaceToSave=localWorkspace;
+        if(saved.exists()){
+          const remoteWorkspace=normalizeCloudWorkspace(saved.val());
+          if(JSON.stringify(localWorkspace)!==JSON.stringify(lastCloudWorkspace)){
+            const merged=mergeConcurrentWorkspaces(lastCloudWorkspace,localWorkspace,remoteWorkspace);
+            workspaceToSave=merged.workspace;
+            if(merged.conflicts)$("#save-label").textContent="พบการแก้ไขพร้อมกัน—เก็บสำเนาไว้แล้ว";
+          }else{
+            workspaceToSave=remoteWorkspace;
+          }
+        }
+        applyCloudWorkspace(workspaceToSave);
+        workspaceToSave=workspaceSnapshot();
+        await firebaseDatabaseApi.set(userWorkspaceRef,cloudWorkspacePayload(workspaceToSave));
+        if(authenticatedUser?.uid!==user.uid)return;
+        lastCloudWorkspace=cloneWorkspaceSnapshot(workspaceToSave);
+        $("#save-label").textContent="ซิงก์ข้อมูลแล้ว";
+        document.body.classList.remove("auth-required");
+        $("#auth-gate").hidden=true;
+      }catch(error){
+        reportCloudError(error);
+      }
+    }
+    async function initializeCloudSync() {
+      const config=window.FABLE_FIREBASE_CONFIG;
+      const requiredConfig=["apiKey","authDomain","databaseURL","projectId","appId"];
+      if(!config||requiredConfig.some(key=>typeof config[key]!=="string"||!config[key].trim()||config[key].includes("REPLACE_WITH"))){
+        updateAuthGate("ตั้งค่า Firebase ก่อนเพื่อเปิด Google login และซิงก์ข้อมูล",{error:true,showSetup:true});
+        return;
+      }
+      try{
+        const [appApi,authApi,databaseApi]=await Promise.all([
+          import("https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js"),
+          import("https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js"),
+          import("https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js")
+        ]);
+        firebaseDatabaseApi=databaseApi;
+        const app=appApi.initializeApp(config);
+        firebaseAuth=authApi.getAuth(app);
+        firebaseDatabase=databaseApi.getDatabase(app);
+        await authApi.setPersistence(firebaseAuth,authApi.browserLocalPersistence);
+        const provider=new authApi.GoogleAuthProvider();
+        provider.setCustomParameters({prompt:"select_account"});
+        $("#google-signin").addEventListener("click",async()=>{
+          $("#google-signin").disabled=true;
+          updateAuthGate("กำลังเปิดหน้าต่างเข้าสู่ระบบ Google...");
+          try{
+            await authApi.signInWithPopup(firebaseAuth,provider);
+          }catch(error){
+            console.error("Google sign-in failed:",error);
+            updateAuthGate(error?.code==="auth/popup-blocked"
+              ? "เบราว์เซอร์บล็อกหน้าต่างเข้าสู่ระบบ กรุณาอนุญาต popup แล้วลองอีกครั้ง"
+              : `เข้าสู่ระบบไม่สำเร็จ: ${error?.message||"กรุณาลองอีกครั้ง"}`,{error:true,allowSignin:true});
+          }
+        });
+        const signOutAccount=async()=>{
+          $("#signout-button").disabled=true;
+          $("#auth-signout").disabled=true;
+          document.body.classList.add("auth-required");
+          updateAuthGate("กำลังบันทึกข้อมูลก่อนออกจากระบบ...");
+          try{
+            if(saveTimer){
+              clearTimeout(saveTimer);
+              saveTimer=null;
+              cacheWorkspaceLocally();
+              if(authenticatedUser)await firebaseDatabaseApi.set(
+                firebaseDatabaseApi.ref(firebaseDatabase,`users/${authenticatedUser.uid}/workspace`),
+                cloudWorkspacePayload(workspaceSnapshot())
+              );
+            }
+            await cloudWriteQueue;
+            await authApi.signOut(firebaseAuth);
+          }catch(error){
+            reportCloudError(error);
+          }finally{
+            $("#signout-button").disabled=false;
+            $("#auth-signout").disabled=false;
+          }
+        };
+        $("#signout-button").addEventListener("click",signOutAccount);
+        $("#auth-signout").addEventListener("click",signOutAccount);
+        window.addEventListener("offline",()=>{
+          if(authenticatedUser)$("#save-label").textContent="ออฟไลน์—เก็บข้อมูลในเครื่อง";
+        });
+        window.addEventListener("online",()=>{
+          if(authenticatedUser)save(0);
+        });
+        authApi.onAuthStateChanged(firebaseAuth,user=>{
+          void handleAuthStateChange(user);
+        });
+      }catch(error){
+        console.error("Firebase initialization failed:",error);
+        updateAuthGate(`โหลดระบบ Firebase ไม่สำเร็จ: ${error?.message||"กรุณาตรวจสอบอินเทอร์เน็ตแล้วลองอีกครั้ง"}`,{error:true,allowRetry:true,showSetup:true});
+      }
+    }
+    function queueCloudWorkspaceSave() {
+      const user=authenticatedUser;
+      if(!user||!firebaseDatabaseApi)return;
+      cloudWriteQueue=cloudWriteQueue.then(async()=>{
+        if(authenticatedUser?.uid!==user.uid)return;
+        const snapshot=workspaceSnapshot();
+        const userWorkspaceRef=firebaseDatabaseApi.ref(firebaseDatabase,`users/${user.uid}/workspace`);
+        await firebaseDatabaseApi.set(userWorkspaceRef,cloudWorkspacePayload(snapshot));
+        if(authenticatedUser?.uid===user.uid){
+          lastCloudWorkspace=cloneWorkspaceSnapshot(snapshot);
+          $("#save-label").textContent="บันทึกบนคลาวด์แล้ว";
+        }
+      }).catch(error=>{
+        reportCloudError(error);
+      });
+    }
     function save(delay=250) {
       clearTimeout(saveTimer);
-      if (data) $("#save-label").textContent = "กำลังบันทึก…";
+      if (data) $("#save-label").textContent = authenticatedUser?"กำลังซิงก์...":"กำลังบันทึก…";
       saveTimer = setTimeout(() => {
+        saveTimer=null;
         try {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(workspace));
-          if (data) $("#save-label").textContent = "บันทึกในเครื่องแล้ว";
+          cacheWorkspaceLocally();
+          if(authenticatedUser){
+            $("#save-label").textContent="กำลังซิงก์...";
+            queueCloudWorkspaceSave();
+          }else if (data) {
+            $("#save-label").textContent = "บันทึกในเครื่องแล้ว";
+          }
         } catch (error) {
           console.error("Could not save novel workspace:", error);
-          if (data) $("#save-label").textContent = "บันทึกไม่สำเร็จ";
+          $("#save-label").textContent = "บันทึกไม่สำเร็จ";
         }
       }, delay);
     }
@@ -2981,7 +3414,7 @@
       document.querySelectorAll("#project-nav [data-page]").forEach(button => button.classList.toggle("active", button.dataset.page === page));
       $("#project-nav").hidden = !data;
       $("#project-nav-label").hidden = !data;
-      $("#save-state").hidden = !data || page === "library";
+      $("#save-state").hidden = !authenticatedUser;
       $("#crumb-separator").hidden = page === "library";
       const pageLabels = { overview:"หน้าหลัก", characters:"แผนผังตัวละคร", "character-info":"ข้อมูลตัวละคร", worldbuilding:"ข้อมูลภายในโลก", maps:"แผนที่", treatment:"ทรีตเมนต์", timeline:"ไทม์ไลน์", chapters:"เขียนเนื้อหารายตอน", assistant:"ปรึกษานิยาย" };
       $("#crumb-page").textContent = page === "library" ? "" : `${data.title || "นิยายไม่มีชื่อ"} / ${pageLabels[page] || ""}`;
@@ -5376,6 +5809,10 @@
     renderLibrary();
     workspace.activeProjectId = null;
     showPage("library");
+    $("#auth-retry").addEventListener("click",()=>{
+      void retryCloudSync();
+    });
+    void initializeCloudSync();
   </script>
 </body>
 </html>
