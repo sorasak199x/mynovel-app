@@ -134,7 +134,7 @@
     .worldbuilding-search { width:min(270px,38vw); height:38px; border:1px solid #404640; border-radius:8px; background:#222623; color:var(--text); outline:none; padding:8px 11px 8px 34px; font:inherit; font-size:12px; }
     .worldbuilding-search:focus { border-color:#9eaf82; }
     .worldbuilding-search-status { color:var(--muted); font-size:11px; margin:-10px 2px 12px; }
-    .worldbuilding-layout { display:grid; grid-template-columns:238px minmax(0,1fr); align-items:start; gap:0; overflow:hidden; border:1px solid #3b4440; border-radius:12px; background:#1e2320; box-shadow:0 12px 32px #0003; }
+    .worldbuilding-layout { display:grid; grid-template-columns:238px minmax(0,1fr); align-items:stretch; gap:0; overflow:visible; border:1px solid #3b4440; border-radius:12px; background:#1e2320; box-shadow:0 12px 32px #0003; }
     .worldbuilding-index { position:sticky; top:20px; align-self:start; padding:19px 13px; background:#1e2320; color:var(--wiki-ink); }
     .worldbuilding-index-heading { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:0 7px 13px; border-bottom:1px solid var(--wiki-line); }
     .worldbuilding-index-heading strong { color:var(--wiki-ink); font-size:13px; }
@@ -147,7 +147,7 @@
     .worldbuilding-toc-link.detail { padding-left:22px; color:#aab8bc; font-size:11px; }
     .worldbuilding-toc-link.detail:before { width:5px; height:1px; border-radius:0; }
     .worldbuilding-index-empty { padding:12px 8px; color:var(--wiki-muted); font-size:11px; line-height:1.6; }
-    .worldbuilding-articles { min-width:0; min-height:420px; padding:26px clamp(20px,4vw,48px) 34px; border-left:1px solid var(--wiki-line); background:var(--wiki-paper); color:var(--wiki-ink); }
+    .worldbuilding-articles { min-width:0; min-height:70vh; padding:26px clamp(20px,4vw,48px) 34px; border-left:1px solid var(--wiki-line); background:var(--wiki-paper); color:var(--wiki-ink); }
     .worldbuilding-article-breadcrumb { display:flex; align-items:center; flex-wrap:wrap; gap:7px; margin-bottom:16px; color:var(--wiki-muted); font-size:11px; }
     .worldbuilding-article-breadcrumb button,.worldbuilding-inline-link { padding:0; border:0; background:none; color:var(--wiki-blue); font:inherit; cursor:pointer; }
     .worldbuilding-article-breadcrumb button:hover,.worldbuilding-inline-link:hover { text-decoration:underline; }
@@ -157,7 +157,7 @@
     .worldbuilding-article-tools { display:flex; flex:none; gap:6px; }
     .worldbuilding-article-tools .icon-button { border-color:#46514b; background:#2e3531; color:var(--wiki-blue); }
     .worldbuilding-article-kicker { margin:13px 0 7px; color:var(--wiki-muted); font-size:10px; }
-    .worldbuilding-article-content { display:block; width:100%; min-height:140px; resize:vertical; border:1px solid transparent; border-radius:5px; background:transparent; color:#e0e5df; outline:none; padding:7px 8px; font:15px/1.9 Georgia,"Noto Serif Thai",serif; }
+    .worldbuilding-article-content { display:block; width:100%; min-height:320px; resize:none; overflow:hidden; border:1px solid transparent; border-radius:5px; background:transparent; color:#e0e5df; outline:none; padding:7px 8px; font:15px/1.9 Georgia,"Noto Serif Thai",serif; }
     .worldbuilding-article-content:focus { border-color:#667c6e; background:#202522; }
     .worldbuilding-article-content::placeholder { color:#89958d; }
     .worldbuilding-article-rule { height:1px; margin:18px 0; border:0; background:var(--wiki-line); }
@@ -194,6 +194,7 @@
     .worldbuilding-read-preview { color:#d9dfd9; font:15px/1.9 Georgia,"Noto Serif Thai",serif; overflow-wrap:anywhere; }
     .worldbuilding-read-preview p { margin:0 0 14px; white-space:pre-wrap; }
     .worldbuilding-wiki-link { border:0; border-bottom:1px dotted #a7c7d4; background:transparent; color:#b7d9e7; padding:0 1px; font:inherit; cursor:pointer; }
+    a.worldbuilding-wiki-link { text-decoration:none; }
     .worldbuilding-wiki-link:hover { color:#e0f3fa; border-bottom-style:solid; }
     .worldbuilding-wiki-link.unresolved { color:#e2bc82; border-color:#e2bc82; }
     .worldbuilding-link-help { margin-top:-1px; color:var(--wiki-muted); font-size:10px; }
@@ -785,7 +786,7 @@
       .worldbuilding-toc-link { width:auto; max-width:100%; padding:6px 8px; }
       .worldbuilding-toc-link.detail { padding-left:8px; }
       .worldbuilding-toc-link.detail:before { display:none; }
-      .worldbuilding-articles { min-height:360px; padding:20px 16px 25px; border-left:0; }
+      .worldbuilding-articles { min-height:70vh; padding:20px 16px 25px; border-left:0; }
       .worldbuilding-article-heading { gap:8px; }
       .worldbuilding-article-tools { gap:3px; }
       .worldbuilding-article-tools .icon-button { padding:5px 6px; font-size:10px; }
@@ -1429,7 +1430,7 @@
     ];
     const emptyChecklist = () => ({ items:[], currentId:null });
     const emptyTreatment = () => ({ premise:"", theme:"", stakes:"", ending:"", opening:"", middle:"", climax:"", subplots:"", episodes:[], timeline:[], timelines:[], activeTimelineId:null });
-    const emptyWorldbuilding = () => ({customSections:[]});
+    const emptyWorldbuilding = () => ({customSections:[],linkedPages:[]});
     const makeWorldMap = (name="แผนที่หลัก") => ({
       id:`world-map-${Date.now()}-${Math.random().toString(36).slice(2,7)}`,
       name,description:"",baseTerrainId:"ocean",objects:[]
@@ -1513,6 +1514,13 @@
           content:typeof detail.content==="string"?detail.content:""
         })):[]
       })):[];
+      const savedLinkedPages=Array.isArray(saved.linkedPages)?saved.linkedPages.filter(page=>page&&typeof page==="object").map((page,index)=>({
+        id:typeof page.id==="string"&&page.id?page.id:`worldbuilding-page-${Date.now()}-${index}`,
+        title:typeof page.title==="string"?page.title:"",
+        content:typeof page.content==="string"?page.content:"",
+        aliases:Array.isArray(page.aliases)?[...new Set(page.aliases.filter(alias=>typeof alias==="string"&&alias.trim()).map(alias=>alias.trim()))]:[],
+        parentSectionId:typeof page.parentSectionId==="string"?page.parentSectionId:""
+      })):[]; 
       const legacyFields=[
         ["worldConcept","แนวคิดหลักของโลก"],["origins","กำเนิดโลกและตำนานสร้างโลก"],["cosmology","จักรวาลและสิ่งเหนือธรรมชาติ"],
         ["worldRules","กฎสำคัญของโลก"],["geography","ภูมิประเทศและแผนที่"],["regions","ภูมิภาคและดินแดน"],
@@ -1538,7 +1546,8 @@
       });
       return {
         ...emptyWorldbuilding(),
-        customSections:savedSections
+        customSections:savedSections,
+        linkedPages:savedLinkedPages
       };
     }
     const makeCharacterMap = (name = "แผนผังหลัก", description = "", edges = []) => ({
@@ -3167,10 +3176,12 @@
       if(!data)return;
       const sections=data.worldbuilding.customSections;
       const articleCount=sections.reduce((count,section)=>count+section.details.length,0);
-      worldbuildingSearchIndex=sections.flatMap(section=>[
+      worldbuildingSearchIndex=[...sections.flatMap(section=>[
         {type:"section",id:section.id,sectionId:section.id,title:section.title||"หมวดที่ยังไม่มีชื่อ",sectionTitle:section.title||"หมวดที่ยังไม่มีชื่อ",content:section.content||""},
         ...section.details.map(detail=>({type:"detail",id:detail.id,sectionId:section.id,title:detail.title||"บทความที่ยังไม่มีชื่อ",sectionTitle:section.title||"หมวดที่ยังไม่มีชื่อ",content:detail.content||""}))
-      ].map(entry=>({...entry,searchable:`${entry.title} ${entry.sectionTitle} ${entry.content}`.toLocaleLowerCase()})));
+      ]),...(data.worldbuilding.linkedPages||[]).map(page=>({
+        type:"linked",id:page.id,title:page.title||"บทความเชื่อมโยงที่ยังไม่มีชื่อ",sectionTitle:"บทความเชื่อมโยง",content:page.content||""
+      }))].map(entry=>({...entry,searchable:`${entry.title} ${entry.sectionTitle} ${entry.content}`.toLocaleLowerCase()}));
       $("#worldbuilding-entry-count").textContent=`${sections.length} หมวด · ${articleCount} บทความ`;
       $("#worldbuilding-toc").innerHTML=sections.length
         ?sections.map(section=>`
@@ -3186,6 +3197,11 @@
         const detail=section.details.find(item=>item.title.trim().toLocaleLowerCase()===normalized);
         if(detail)return {type:"detail",id:detail.id,sectionId:section.id,title:detail.title};
       }
+      const linkedPage=data?.worldbuilding.linkedPages?.find(page=>
+        page.title.trim().toLocaleLowerCase()===normalized
+        ||page.aliases.some(alias=>alias.toLocaleLowerCase()===normalized)
+      );
+      if(linkedPage)return {type:"linked",id:linkedPage.id,title:linkedPage.title};
       return null;
     }
     function renderWorldbuildingReadPreview(content) {
@@ -3200,7 +3216,10 @@
           if(!title)output+=escapeHTML(match[0]);
           else{
             const entry=findWorldbuildingEntryByTitle(title);
-            if(entry)output+=`<button type="button" class="worldbuilding-wiki-link" data-worldbuilding-link-type="${entry.type}" data-worldbuilding-link-id="${escapeHTML(entry.id)}">${escapeHTML(title)}</button>`;
+            if(entry){
+              const route={projectId:data.id,type:entry.type,id:entry.id,readMode:true};
+              output+=`<a class="worldbuilding-wiki-link" href="${escapeHTML(worldbuildingHistoryUrl(route))}" data-worldbuilding-link-type="${entry.type}" data-worldbuilding-link-id="${escapeHTML(entry.id)}">${escapeHTML(title)}</a>`;
+            }
             else output+=`<button type="button" class="worldbuilding-wiki-link unresolved" data-worldbuilding-create-link="${escapeHTML(title)}" title="คลิกเพื่อสร้างบทความนี้">${escapeHTML(title)} ＋</button>`;
           }
           lastIndex=pattern.lastIndex;
@@ -3230,14 +3249,41 @@
     function renderWorldbuilding() {
       if(!data)return;
       const sections=data.worldbuilding.customSections;
+      const linkedPages=data.worldbuilding.linkedPages||[];
+      const linkedPage=activeWorldbuildingEntry?.type==="linked"?linkedPages.find(page=>page.id===activeWorldbuildingEntry.id):null;
       const selectedSection=sections.find(section=>section.id===activeWorldbuildingEntry?.id&&activeWorldbuildingEntry.type==="section")
         ||sections.find(section=>section.details.some(detail=>detail.id===activeWorldbuildingEntry?.id)&&activeWorldbuildingEntry.type==="detail")
         ||sections[0];
       const activeEntryExists=sections.some(section=>
         activeWorldbuildingEntry?.type==="section"&&section.id===activeWorldbuildingEntry.id
-        ||activeWorldbuildingEntry?.type==="detail"&&section.details.some(detail=>detail.id===activeWorldbuildingEntry.id));
+        ||activeWorldbuildingEntry?.type==="detail"&&section.details.some(detail=>detail.id===activeWorldbuildingEntry.id))
+        ||Boolean(linkedPage);
       if(!activeEntryExists)activeWorldbuildingEntry=selectedSection?{type:"section",id:selectedSection.id}:null;
       if(activeWorldbuildingEntry?.type==="detail"&&!selectedSection?.details.some(detail=>detail.id===activeWorldbuildingEntry.id))activeWorldbuildingEntry=selectedSection?{type:"section",id:selectedSection.id}:null;
+      if(linkedPage){
+        const parentSection=sections.find(section=>section.id===linkedPage.parentSectionId);
+        const articleTitle=linkedPage.title||"บทความเชื่อมโยงที่ยังไม่มีชื่อ";
+        const breadcrumb=parentSection
+          ?`<div class="worldbuilding-article-breadcrumb"><button type="button" data-worldbuilding-select-section="${escapeHTML(parentSection.id)}">สารานุกรม</button><span>›</span><button type="button" data-worldbuilding-select-section="${escapeHTML(parentSection.id)}">${escapeHTML(parentSection.title||"หมวดที่ยังไม่มีชื่อ")}</button><span>›</span><span>${escapeHTML(articleTitle)}</span></div>`
+          :`<div class="worldbuilding-article-breadcrumb"><span>สารานุกรม</span><span>›</span><span>${escapeHTML(articleTitle)}</span></div>`;
+        const titleField=worldbuildingReadMode
+          ?`<h1 class="worldbuilding-article-title">${escapeHTML(articleTitle)}</h1>`
+          :`<input class="worldbuilding-article-title" type="text" data-worldbuilding-linked-title="${escapeHTML(linkedPage.id)}" data-original-title="${escapeHTML(linkedPage.title)}" maxlength="80" aria-label="ชื่อบทความ" value="${escapeHTML(linkedPage.title)}" placeholder="ตั้งชื่อบทความ">`;
+        const bodyField=worldbuildingReadMode
+          ?`<div class="worldbuilding-read-preview">${renderWorldbuildingReadPreview(linkedPage.content)}</div>`
+          :`<textarea class="worldbuilding-article-content" data-worldbuilding-linked-content="${escapeHTML(linkedPage.id)}" placeholder="เขียนเนื้อหาของบทความนี้…">${escapeHTML(linkedPage.content)}</textarea><p class="worldbuilding-link-help">เชื่อมไปยังหมวดหรือบทความอื่นด้วยรูปแบบ [[ชื่อบทความ]]</p>`;
+        const modeButton=`<button type="button" class="button worldbuilding-mode-button" data-worldbuilding-toggle-mode>${worldbuildingReadMode?"✎ แก้ไข":"◉ ดูหน้าอ่าน"}</button>`;
+        const tools=`${modeButton}${worldbuildingReadMode?"":`<button type="button" class="icon-button delete-button" data-delete-worldbuilding-linked-page="${escapeHTML(linkedPage.id)}" aria-label="ลบบทความนี้" title="ลบบทความนี้">ลบบทความ</button>`}`;
+        $("#worldbuilding-custom-list").innerHTML=`
+          ${breadcrumb}
+          <header class="worldbuilding-article-heading">${titleField}<div class="worldbuilding-article-tools">${tools}</div></header>
+          <p class="worldbuilding-article-kicker">บทความเชื่อมโยง · ${worldbuildingReadMode?"โหมดอ่าน":"บันทึกอัตโนมัติ"}</p>
+          ${bodyField}`;
+        renderWorldbuildingIndex();
+        resizeWorldbuildingEditor();
+        applyWorldbuildingSearch();
+        return;
+      }
       const currentSection=sections.find(section=>section.id===activeWorldbuildingEntry?.id&&activeWorldbuildingEntry.type==="section")
         ||sections.find(section=>section.details.some(detail=>detail.id===activeWorldbuildingEntry?.id)&&activeWorldbuildingEntry.type==="detail")
         ||selectedSection;
@@ -3299,7 +3345,13 @@
         <p class="worldbuilding-article-kicker">${currentDetail?"บทความในหมวด":"บทนำหมวดหมู่"} · ${worldbuildingReadMode?"โหมดอ่าน":"บันทึกอัตโนมัติ"}</p>
         ${bodyField}
         ${sectionContents}${relatedNav}`;
+      resizeWorldbuildingEditor();
       applyWorldbuildingSearch();
+    }
+    function resizeWorldbuildingEditor(editor=$("#worldbuilding-custom-list .worldbuilding-article-content")) {
+      if(!editor)return;
+      editor.style.height="auto";
+      editor.style.height=`${Math.max(editor.scrollHeight,320)}px`;
     }
     function worldbuildingHistoryUrl(entry) {
       return `#worldbuilding/${encodeURIComponent(entry.projectId)}/${entry.type}/${encodeURIComponent(entry.id)}`;
@@ -3327,7 +3379,9 @@
       if(!route||route.projectId!==data?.id)return;
       const entryExists=route.type==="section"
         ?data.worldbuilding.customSections.some(section=>section.id===route.id)
-        :route.type==="detail"&&data.worldbuilding.customSections.some(section=>section.details.some(detail=>detail.id===route.id));
+        :route.type==="detail"
+          ?data.worldbuilding.customSections.some(section=>section.details.some(detail=>detail.id===route.id))
+          :route.type==="linked"&&(data.worldbuilding.linkedPages||[]).some(page=>page.id===route.id);
       if(!entryExists)return;
       activeWorldbuildingEntry={type:route.type,id:route.id};
       worldbuildingReadMode=Boolean(route.readMode);
@@ -3350,7 +3404,7 @@
       results.innerHTML=matches.length
         ?matches.slice(0,40).map(entry=>`
           <button type="button" class="worldbuilding-search-result" role="option" data-worldbuilding-search-type="${entry.type}" data-worldbuilding-search-id="${escapeHTML(entry.id)}">
-            <strong>${escapeHTML(entry.title)}</strong><small>${escapeHTML(entry.type==="detail"?`บทความ · ${entry.sectionTitle}`:"หมวดสารานุกรม")} · ${escapeHTML(worldbuildingSearchSnippet(entry,query))}</small>
+          <strong>${escapeHTML(entry.title)}</strong><small>${escapeHTML(entry.type==="linked"?"บทความเชื่อมโยง":entry.type==="detail"?`บทความ · ${entry.sectionTitle}`:"หมวดสารานุกรม")} · ${escapeHTML(worldbuildingSearchSnippet(entry,query))}</small>
           </button>`).join("")
         :`<div class="worldbuilding-search-empty">ลองค้นด้วยชื่อหมวด ชื่อบทความ หรือคำที่อยู่ในเนื้อหา</div>`;
     }
@@ -4788,21 +4842,24 @@
       }
       const wikiLink=event.target.closest("[data-worldbuilding-link-id]");
       if(wikiLink){
+        if(event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;
+        event.preventDefault();
         navigateWorldbuildingEntry(wikiLink.dataset.worldbuildingLinkType,wikiLink.dataset.worldbuildingLinkId);
         return;
       }
       const createLink=event.target.closest("[data-worldbuilding-create-link]");
       if(createLink){
-        const section=data.worldbuilding.customSections.find(item=>
-          item.id===activeWorldbuildingEntry?.id
-          ||item.details.some(detail=>detail.id===activeWorldbuildingEntry?.id)
+        const sourceId=activeWorldbuildingEntry?.id;
+        const parentSection=data.worldbuilding.customSections.find(section=>
+          section.id===sourceId||section.details.some(detail=>detail.id===sourceId)
         );
-        if(!section)return;
-        const detail={id:`worldbuilding-detail-${Date.now()}-${Math.random().toString(36).slice(2,7)}`,title:createLink.dataset.worldbuildingCreateLink,content:""};
-        section.details.push(detail);
+        const sourcePage=data.worldbuilding.linkedPages?.find(page=>page.id===sourceId);
+        const page={id:`worldbuilding-page-${Date.now()}-${Math.random().toString(36).slice(2,7)}`,title:createLink.dataset.worldbuildingCreateLink,content:"",aliases:[],parentSectionId:parentSection?.id||sourcePage?.parentSectionId||""};
+        if(!Array.isArray(data.worldbuilding.linkedPages))data.worldbuilding.linkedPages=[];
+        data.worldbuilding.linkedPages.push(page);
         save(700);
-        navigateWorldbuildingEntry("detail",detail.id,false);
-        $(`[data-worldbuilding-detail-title="${detail.id}"]`)?.focus();
+        navigateWorldbuildingEntry("linked",page.id,false);
+        $(`[data-worldbuilding-linked-title="${page.id}"]`)?.focus();
         return;
       }
       const sectionLink=event.target.closest("[data-worldbuilding-select-section]");
@@ -4821,12 +4878,17 @@
       const content=event.target.closest("[data-worldbuilding-section-content]");
       const detailTitle=event.target.closest("[data-worldbuilding-detail-title]");
       const detailContent=event.target.closest("[data-worldbuilding-detail-content]");
+      const linkedTitle=event.target.closest("[data-worldbuilding-linked-title]");
+      const linkedContent=event.target.closest("[data-worldbuilding-linked-content]");
       if(title||content){
         const sectionId=title?.dataset.worldbuildingSectionTitle||content?.dataset.worldbuildingSectionContent;
         const section=data.worldbuilding.customSections.find(item=>item.id===sectionId);
         if(!section)return;
         if(title)section.title=title.value;
-        if(content)section.content=content.value;
+        if(content){
+          section.content=content.value;
+          resizeWorldbuildingEditor(content);
+        }
         queueWorldbuildingIndexRefresh(500);
         save(700);
         return;
@@ -4836,7 +4898,23 @@
         const detail=data.worldbuilding.customSections.flatMap(section=>section.details).find(item=>item.id===detailId);
         if(!detail)return;
         if(detailTitle)detail.title=detailTitle.value;
-        if(detailContent)detail.content=detailContent.value;
+        if(detailContent){
+          detail.content=detailContent.value;
+          resizeWorldbuildingEditor(detailContent);
+        }
+      }else if(linkedTitle||linkedContent){
+        const pageId=linkedTitle?.dataset.worldbuildingLinkedTitle||linkedContent?.dataset.worldbuildingLinkedContent;
+        const page=data.worldbuilding.linkedPages?.find(item=>item.id===pageId);
+        if(!page)return;
+        if(linkedTitle){
+          const previousTitle=linkedTitle.dataset.originalTitle.trim();
+          if(previousTitle&&previousTitle!==linkedTitle.value.trim()&&!page.aliases.includes(previousTitle))page.aliases.push(previousTitle);
+          page.title=linkedTitle.value;
+        }
+        if(linkedContent){
+          page.content=linkedContent.value;
+          resizeWorldbuildingEditor(linkedContent);
+        }
       }else return;
       queueWorldbuildingIndexRefresh(500);
       save(700);
@@ -4880,6 +4958,21 @@
         save();
         renderWorldbuilding();
         $(`[data-worldbuilding-detail-title="${detail.id}"]`)?.focus();
+        return;
+      }
+      const deleteLinkedPage=event.target.closest("[data-delete-worldbuilding-linked-page]");
+      if(deleteLinkedPage){
+        const page=data.worldbuilding.linkedPages?.find(item=>item.id===deleteLinkedPage.dataset.deleteWorldbuildingLinkedPage);
+        if(!page)return;
+        requestDeleteConfirmation(`ลบบทความเชื่อมโยง “${page.title||"บทความที่ยังไม่มีชื่อ"}” หรือไม่? ลิงก์ที่อ้างถึงบทความนี้จะกลายเป็นลิงก์ที่ยังไม่มีปลายทาง`,()=>{
+          data.worldbuilding.linkedPages=data.worldbuilding.linkedPages.filter(item=>item.id!==page.id);
+          if(activeWorldbuildingEntry?.type==="linked"&&activeWorldbuildingEntry.id===page.id){
+            const fallback=data.worldbuilding.customSections.find(section=>section.id===page.parentSectionId)||data.worldbuilding.customSections[0];
+            activeWorldbuildingEntry=fallback?{type:"section",id:fallback.id}:null;
+          }
+          save();
+          renderWorldbuilding();
+        },"ลบบทความเชื่อมโยง?","ลบบทความ");
         return;
       }
       const deleteDetail=event.target.closest("[data-delete-worldbuilding-detail]");
