@@ -2831,6 +2831,7 @@
       cacheWorkspaceLocally();
       if(page!=="library"&&data&&JSON.stringify(data)===previousDataJson){
         renderLibrary();
+        if(page==="assistant")loadAssistantChat();
       }else{
         showPage(page);
       }
