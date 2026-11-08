@@ -595,6 +595,9 @@
     .app.assistant-mode .page-heading { flex:none; margin-bottom:18px; }
     .assistant-page-card { display:flex; flex:1; min-height:0; flex-direction:column; padding:0; overflow:hidden; }
     .assistant-disclosure { padding:10px 15px; border-bottom:1px solid var(--line); color:#c8c0a3; background:#302e27; font-size:11px; }
+    .assistant-chat-toolbar { display:grid; grid-template-columns:minmax(0,1fr) auto auto; gap:7px; padding:9px 12px; border-bottom:1px solid var(--line); background:#252a26; }
+    .assistant-chat-select { min-width:0; height:34px; border:1px solid #404640; border-radius:8px; background:#202421; color:var(--text); padding:5px 8px; font:inherit; font-size:11px; }
+    .assistant-chat-toolbar .button { min-height:34px; padding:6px 9px; font-size:11px; white-space:nowrap; }
     .assistant-messages { display:flex; flex:1; min-height:0; flex-direction:column; gap:12px; overflow:auto; overscroll-behavior:contain; padding:18px; }
     .assistant-message { max-width:min(86%,760px); padding:10px 13px; border:1px solid #3c433b; border-radius:12px 12px 12px 3px; background:#222623; color:var(--text); white-space:pre-wrap; overflow-wrap:anywhere; font-size:13px; line-height:1.7; }
     .assistant-message.user { align-self:flex-end; border-color:#536047; border-radius:12px 12px 3px 12px; background:#30372d; }
@@ -606,6 +609,9 @@
     .assistant-compose button { align-self:end; min-height:40px; }
     .assistant-status { min-height:19px; padding:0 14px 8px; color:var(--muted); font-size:11px; }
     .assistant-panel .assistant-messages { min-height:0; padding:12px; }
+    .assistant-panel .assistant-chat-toolbar { grid-template-columns:minmax(0,1fr) auto auto; gap:5px; padding:7px; }
+    .assistant-panel .assistant-chat-toolbar .button { padding:5px 7px; font-size:10px; }
+    .assistant-panel .assistant-chat-select { font-size:10px; }
     .assistant-panel .assistant-message { max-width:94%; padding:8px 10px; font-size:12px; }
     .assistant-panel .assistant-compose { padding:9px; }
     .assistant-panel .assistant-compose textarea { min-height:40px; }
@@ -771,6 +777,8 @@
       .timeline-tools { width:100%; }
       .timeline-select,.timeline-name-input,.custom-select-timeline-select { min-width:0; max-width:100%; }
       .assistant-messages { padding:12px; }
+      .assistant-chat-toolbar { grid-template-columns:minmax(0,1fr) auto auto; gap:5px; padding:7px; }
+      .assistant-chat-toolbar .button { padding:6px 7px; font-size:10px; }
       .assistant-compose { grid-template-columns:minmax(0,1fr) auto; gap:6px; padding:8px; }
       .assistant-compose textarea { min-width:0; padding:9px; }
       .assistant-compose button { padding:8px 10px; }
@@ -1112,6 +1120,11 @@
             <div><div class="eyebrow">WRITING COMPANION</div><h1>ปรึกษานิยาย</h1><p class="subtitle">คุยเรื่องพล็อต ตัวละคร และต้นฉบับ โดยอ้างอิงข้อมูลนิยายเรื่องที่เปิดอยู่</p></div>
           </div>
           <div class="card assistant-page-card">
+            <div class="assistant-chat-toolbar">
+              <select class="assistant-chat-select" data-assistant-chat-select aria-label="เลือกแชทปรึกษานิยาย"></select>
+              <button type="button" class="button" data-assistant-chat-action="new">＋ แชทใหม่</button>
+              <button type="button" class="button" data-assistant-chat-action="delete">ลบแชท</button>
+            </div>
             <div class="assistant-messages" id="assistant-page-messages" role="log" aria-live="polite"></div>
             <div class="assistant-status" id="assistant-page-status" role="status" aria-live="polite">กำลังตรวจสอบการเชื่อมต่อ…</div>
             <form class="assistant-compose" id="assistant-page-form">
@@ -1136,6 +1149,11 @@
                 <button type="button" id="assistant-close" aria-label="ปิดหน้าต่างแชต" title="ปิด">×</button>
               </div>
             </header>
+            <div class="assistant-chat-toolbar">
+              <select class="assistant-chat-select" data-assistant-chat-select aria-label="เลือกแชทปรึกษานิยาย"></select>
+              <button type="button" class="button" data-assistant-chat-action="new">＋ ใหม่</button>
+              <button type="button" class="button" data-assistant-chat-action="delete">ลบ</button>
+            </div>
             <div class="assistant-messages" id="assistant-widget-messages" role="log" aria-live="polite"></div>
             <div class="assistant-status" id="assistant-widget-status" role="status" aria-live="polite"></div>
             <form class="assistant-compose" id="assistant-widget-form">
@@ -1648,9 +1666,44 @@
         ? messages.filter(message=>message&&["user","assistant"].includes(message.role)&&typeof message.content==="string").slice(-40)
         : [];
     }
+    function makeAssistantChat(title="แชทใหม่") {
+      return {
+        id:`assistant-chat-${Date.now()}-${Math.random().toString(36).slice(2,7)}`,
+        title,
+        updatedAt:Date.now(),
+        messages:[]
+      };
+    }
+    function normalizeAssistantChatState(value) {
+      if(Array.isArray(value)){
+        const messages=sanitizeAssistantMessages(value);
+        if(!messages.length)return {activeChatId:null,chats:[]};
+        const firstQuestion=messages.find(message=>message.role==="user")?.content?.trim()||"";
+        return {
+          activeChatId:"assistant-chat-legacy",
+          chats:[{
+            id:"assistant-chat-legacy",
+            title:firstQuestion?`${firstQuestion.slice(0,36)}${firstQuestion.length>36?"…":""}`:"แชทเดิม",
+            updatedAt:0,
+            messages
+          }]
+        };
+      }
+      if(!value||typeof value!=="object"||Array.isArray(value))return {activeChatId:null,chats:[]};
+      const chats=Array.isArray(value.chats)?value.chats.filter(chat=>chat&&typeof chat==="object"&&!Array.isArray(chat)&&typeof chat.id==="string"&&chat.id).map(chat=>({
+        id:chat.id,
+        title:typeof chat.title==="string"&&chat.title.trim()?chat.title.trim().slice(0,80):"แชทใหม่",
+        updatedAt:Number.isFinite(chat.updatedAt)?chat.updatedAt:0,
+        messages:sanitizeAssistantMessages(chat.messages)
+      })):[];
+      const activeChatId=chats.some(chat=>chat.id===value.activeChatId)
+        ?value.activeChatId
+        :chats.reduce((latest,chat)=>!latest||chat.updatedAt>latest.updatedAt?chat:latest,null)?.id||null;
+      return {activeChatId,chats};
+    }
     function sanitizeAssistantChats(chats) {
       if(!chats||typeof chats!=="object"||Array.isArray(chats))return {};
-      return Object.fromEntries(Object.entries(chats).filter(([id])=>typeof id==="string").map(([id,messages])=>[id,sanitizeAssistantMessages(messages)]));
+      return Object.fromEntries(Object.entries(chats).filter(([id])=>typeof id==="string").map(([id,state])=>[id,normalizeAssistantChatState(state)]));
     }
     function loadLocalAssistantChats() {
       const chats={};
@@ -1686,33 +1739,79 @@
     let assistantChatProjectId=null;
     let assistantChatMessages=[];
     let assistantChatBusy=false;
+    function activeAssistantChat(projectId=data?.id) {
+      const state=workspace.assistantChats?.[projectId];
+      return state?.chats?.find(chat=>chat.id===state.activeChatId)||null;
+    }
+    function persistAssistantChatState(projectId) {
+      if(!projectId)return;
+      const state=normalizeAssistantChatState(workspace.assistantChats?.[projectId]);
+      workspace.assistantChats[projectId]=state;
+      if(!authenticatedUser){
+        try{
+          localStorage.setItem(ASSISTANT_CHAT_KEY_PREFIX+projectId,JSON.stringify(state));
+        }catch(error){
+          console.error(`Could not save assistant chats for ${projectId}:`,error);
+          setAssistantStatus("บันทึกประวัติแชทในเครื่องไม่สำเร็จ");
+        }
+      }
+      save();
+    }
     function loadAssistantChat() {
       if(!data)return;
       if(assistantChatProjectId===data.id)return;
       assistantChatProjectId=data.id;
       try{
         const saved=workspace.assistantChats?.[data.id]??(authenticatedUser?[]:JSON.parse(localStorage.getItem(ASSISTANT_CHAT_KEY_PREFIX+data.id)||"[]"));
-        assistantChatMessages=sanitizeAssistantMessages(saved);
+        const state=normalizeAssistantChatState(saved);
+        if(!state.chats.length)state.chats.push(makeAssistantChat());
+        if(!state.chats.some(chat=>chat.id===state.activeChatId)){
+          state.activeChatId=state.chats[state.chats.length-1].id;
+        }
+        workspace.assistantChats[data.id]=state;
+        assistantChatMessages=activeAssistantChat(data.id)?.messages||[];
       }catch(error){
         console.error("Could not read saved assistant chat:",error);
-        assistantChatMessages=[];
+        const state={activeChatId:null,chats:[makeAssistantChat()]};
+        state.activeChatId=state.chats[0].id;
+        workspace.assistantChats[data.id]=state;
+        assistantChatMessages=state.chats[0].messages;
       }
       renderAssistantChat();
     }
-    function saveAssistantChat() {
-      if(!data)return;
-      try{
-        assistantChatMessages=assistantChatMessages.slice(-40);
-        if(!authenticatedUser)localStorage.setItem(ASSISTANT_CHAT_KEY_PREFIX+data.id,JSON.stringify(assistantChatMessages));
-        if(!workspace.assistantChats)workspace.assistantChats={};
-        workspace.assistantChats[data.id]=assistantChatMessages;
-        save();
-      }catch(error){
-        console.error("Could not save assistant chat:",error);
-        setAssistantStatus("บันทึกประวัติแชทในเครื่องไม่สำเร็จ");
+    function saveAssistantChat(projectId=assistantChatProjectId,chat=activeAssistantChat(projectId)) {
+      if(!projectId||!chat)return;
+      if(!workspace.assistantChats)workspace.assistantChats={};
+      const state=normalizeAssistantChatState(workspace.assistantChats[projectId]);
+      const existing=state.chats.find(item=>item.id===chat.id);
+      if(existing){
+        existing.messages=sanitizeAssistantMessages(chat.messages);
+        existing.title=chat.title;
+        existing.updatedAt=Date.now();
+      }else{
+        state.chats.push({...chat,messages:sanitizeAssistantMessages(chat.messages),updatedAt:Date.now()});
       }
+      state.activeChatId=chat.id;
+      workspace.assistantChats[projectId]=state;
+      if(projectId===assistantChatProjectId)assistantChatMessages=state.chats.find(item=>item.id===chat.id)?.messages||[];
+      persistAssistantChatState(projectId);
     }
     function renderAssistantChat() {
+      const state=normalizeAssistantChatState(workspace.assistantChats?.[data?.id]);
+      document.querySelectorAll("[data-assistant-chat-select]").forEach(select=>{
+        const options=state.chats.map(chat=>{
+          const option=document.createElement("option");
+          option.value=chat.id;
+          option.textContent=chat.title;
+          option.selected=chat.id===state.activeChatId;
+          return option;
+        });
+        select.replaceChildren(...options);
+        select.disabled=assistantChatBusy||state.chats.length<2;
+      });
+      document.querySelectorAll("[data-assistant-chat-action]").forEach(button=>{
+        button.disabled=assistantChatBusy;
+      });
       document.querySelectorAll("#assistant-page-messages,#assistant-widget-messages").forEach(container=>{
         container.replaceChildren();
         if(!assistantChatMessages.length){
@@ -1737,15 +1836,75 @@
         if(status)status.textContent=message;
       });
     }
-    function assistantHistoryForRequest() {
-      return assistantChatMessages.slice(-11,-1)
+    function selectAssistantChat(chatId) {
+      if(!data||assistantChatBusy)return;
+      const state=normalizeAssistantChatState(workspace.assistantChats?.[data.id]);
+      const chat=state.chats.find(item=>item.id===chatId);
+      if(!chat)return;
+      state.activeChatId=chat.id;
+      workspace.assistantChats[data.id]=state;
+      assistantChatProjectId=data.id;
+      assistantChatMessages=chat.messages;
+      persistAssistantChatState(data.id);
+      renderAssistantChat();
+      setAssistantStatus("เปิดแชทแล้ว");
+    }
+    function createAssistantConversation() {
+      if(!data||assistantChatBusy)return;
+      const projectId=data.id;
+      const state=normalizeAssistantChatState(workspace.assistantChats?.[projectId]);
+      const chat=makeAssistantChat();
+      state.chats.push(chat);
+      state.activeChatId=chat.id;
+      workspace.assistantChats[projectId]=state;
+      assistantChatProjectId=projectId;
+      assistantChatMessages=chat.messages;
+      persistAssistantChatState(projectId);
+      renderAssistantChat();
+      setAssistantStatus("เริ่มแชทใหม่แล้ว");
+    }
+    function deleteAssistantConversation() {
+      if(!data||assistantChatBusy)return;
+      const projectId=data.id;
+      const state=normalizeAssistantChatState(workspace.assistantChats?.[projectId]);
+      const target=state.chats.find(chat=>chat.id===state.activeChatId);
+      if(!target)return;
+      requestDeleteConfirmation(`ลบแชท “${target.title}” และประวัติข้อความในแชทนี้หรือไม่?`,()=>{
+        const latestState=normalizeAssistantChatState(workspace.assistantChats?.[projectId]);
+        latestState.chats=latestState.chats.filter(chat=>chat.id!==target.id);
+        if(!latestState.chats.length)latestState.chats.push(makeAssistantChat());
+        if(latestState.activeChatId===target.id){
+          latestState.activeChatId=latestState.chats.reduce((latest,chat)=>!latest||chat.updatedAt>latest.updatedAt?chat:latest,null).id;
+        }
+        workspace.assistantChats[projectId]=latestState;
+        if(data?.id===projectId){
+          assistantChatProjectId=projectId;
+          assistantChatMessages=activeAssistantChat(projectId)?.messages||[];
+          renderAssistantChat();
+          setAssistantStatus("ลบแชทแล้ว");
+        }
+        persistAssistantChatState(projectId);
+      },"ลบแชทนี้?","ลบแชท");
+    }
+    document.addEventListener("change",event=>{
+      const select=event.target.closest("[data-assistant-chat-select]");
+      if(select)selectAssistantChat(select.value);
+    });
+    document.addEventListener("click",event=>{
+      const action=event.target.closest("[data-assistant-chat-action]");
+      if(!action)return;
+      if(action.dataset.assistantChatAction==="new")createAssistantConversation();
+      if(action.dataset.assistantChatAction==="delete")deleteAssistantConversation();
+    });
+    function assistantHistoryForRequest(messages=assistantChatMessages) {
+      return messages.slice(-11,-1)
         .filter(message=>message&&["user","assistant"].includes(message.role)&&typeof message.content==="string")
         .map(({role,content})=>({
           role,
           content:content.length>4_000?`${content.slice(0,3_970)}\n[ตัดข้อความส่วนที่เหลือ]`:content
         }));
     }
-    function makeAssistantMemories(question) {
+    function makeAssistantMemories(question,chatMessages=assistantChatMessages) {
       if(!data)return {longTermMemory:"",storyMemory:"",conversationMemory:{history:[],currentTask:question}};
       const clean=value=>typeof value==="string"?value.trim():"";
       const formatSections=sections=>{
@@ -1768,11 +1927,19 @@
         `ยุคสมัย: ${clean(data.era)}`,
         `สถานที่: ${clean(data.place)}`
         ]);
-        const worldSections=(data.worldbuilding?.customSections||[]).map(section=>{
-          const details=(section.details||[]).map(detail=>`${clean(detail.title)}: ${clean(detail.content)}`).filter(value=>value!==":").join("\n");
-          return [clean(section.title),clean(section.content),details].filter(Boolean).join("\n");
+        const worldSections=(data.worldbuilding?.customSections||[]).map((section,index)=>{
+          const entries=[
+            `หมวดสารานุกรม ${index+1}: ${clean(section.title)||"ยังไม่มีชื่อ"}`,
+            clean(section.content)?`ภาพรวมหมวด:\n${clean(section.content)}`:""
+          ];
+          (section.details||[]).forEach((detail,detailIndex)=>{
+            const title=clean(detail.title);
+            const content=clean(detail.content);
+            if(title||content)entries.push(`บทความสารานุกรม: ${title||`บทความย่อย ${detailIndex+1}`}${content?`\nเนื้อหา:\n${content}`:""}`);
+          });
+          return entries.filter(Boolean).join("\n");
         }).filter(Boolean);
-        addSection("ข้อมูลโลกและกฎของจักรวาล",worldSections);
+        addSection("สารานุกรมโลก — ข้อมูลล่าสุดจากทุกหมวดและทุกบทความ",worldSections);
         const characters=(data.characters||[]).map(person=>{
         const fields=(person.customFields||[]).map(field=>{
           const label=data.characterFieldDefinitions?.find(item=>item.id===field.fieldId)?.label||"รายละเอียด";
@@ -1873,7 +2040,7 @@
         longTermMemory,
         storyMemory,
         conversationMemory:{
-          history:assistantHistoryForRequest(),
+          history:assistantHistoryForRequest(chatMessages),
           currentTask:question
         }
       };
@@ -1909,34 +2076,53 @@
       const question=input.value.trim();
       if(!question||assistantChatBusy||!data)return;
       loadAssistantChat();
-      assistantChatMessages.push({role:"user",content:question});
-      saveAssistantChat();
+      const projectId=data.id;
+      const chat=activeAssistantChat(projectId);
+      if(!chat)return;
+      chat.messages.push({role:"user",content:question});
+      if(chat.title==="แชทใหม่"){
+        chat.title=`${question.slice(0,36)}${question.length>36?"…":""}`;
+      }
+      saveAssistantChat(projectId,chat);
+      const requestChat=activeAssistantChat(projectId);
+      const memories=makeAssistantMemories(question,requestChat?.messages||[]);
       renderAssistantChat();
       document.querySelectorAll("#assistant-page-input,#assistant-widget-input").forEach(field=>field.value="");
       assistantChatBusy=true;
       document.querySelectorAll(".assistant-compose button").forEach(button=>button.disabled=true);
-      setAssistantStatus("กำลังอ่านความทรงจำทั้ง 3 ชั้นและวิเคราะห์คำตอบ…");
+      renderAssistantChat();
+      setAssistantStatus("กำลังอ่านข้อมูลนิยายและสารานุกรมทั้ง 3 ชั้น…");
       try{
         const response=await fetch("/api/chat",{
           method:"POST",
           headers:{"Content-Type":"application/json","Accept":"application/json"},
           body:JSON.stringify({
             message:question,
-            memories:makeAssistantMemories(question)
+            memories
           })
         });
         const result=await readAssistantApiResponse(response);
         if(typeof result.reply!=="string"||!result.reply.trim())throw new Error("ผู้ช่วย AI ไม่ได้ส่งคำตอบกลับมา กรุณาลองใหม่");
-        assistantChatMessages.push({role:"assistant",content:result.reply.trim()});
-        saveAssistantChat();
-        renderAssistantChat();
-        setAssistantStatus("พร้อมช่วยคิดเรื่องนิยาย");
+        const latestState=normalizeAssistantChatState(workspace.assistantChats?.[projectId]);
+        const latestChat=latestState.chats.find(item=>item.id===requestChat?.id);
+        if(latestChat){
+          latestChat.messages.push({role:"assistant",content:result.reply.trim()});
+          workspace.assistantChats[projectId]=latestState;
+          saveAssistantChat(projectId,latestChat);
+          if(data?.id===projectId&&activeAssistantChat(projectId)?.id===latestChat.id){
+            renderAssistantChat();
+            setAssistantStatus("พร้อมช่วยคิดเรื่องนิยาย");
+          }
+        }
       }catch(error){
         console.error("Could not send assistant message:",error);
-        setAssistantStatus(error.message||"ส่งข้อความไม่สำเร็จ กรุณาลองใหม่");
+        if(data?.id===projectId&&activeAssistantChat(projectId)?.id===requestChat?.id){
+          setAssistantStatus(error.message||"ส่งข้อความไม่สำเร็จ กรุณาลองใหม่");
+        }
       }finally{
         assistantChatBusy=false;
         document.querySelectorAll(".assistant-compose button").forEach(button=>button.disabled=false);
+        renderAssistantChat();
       }
     }
     $("#assistant-page-form").addEventListener("submit",event=>{
@@ -1962,6 +2148,7 @@
       $("#assistant-launcher").setAttribute("aria-expanded",String(opening));
       if(opening){
         loadAssistantChat();
+        renderAssistantChat();
         $("#assistant-widget-input").focus();
       }
     });
@@ -2152,7 +2339,7 @@
           ? Object.values(rawChats)
           : null;
       const assistantChats=chatRecords
-        ? Object.fromEntries(chatRecords.filter(entry=>typeof entry.projectId==="string").map(entry=>[entry.projectId,sanitizeAssistantMessages(entry.messages)]))
+        ? Object.fromEntries(chatRecords.filter(entry=>typeof entry.projectId==="string").map(entry=>[entry.projectId,normalizeAssistantChatState(Array.isArray(entry.chats)?entry:entry.messages)]))
         : sanitizeAssistantChats(value.assistantChats);
       return {
         projects,
@@ -2163,7 +2350,7 @@
     function cloudWorkspacePayload(value) {
       return {
         ...value,
-        assistantChats:Object.entries(sanitizeAssistantChats(value.assistantChats)).map(([projectId,messages])=>({projectId,messages}))
+        assistantChats:Object.entries(sanitizeAssistantChats(value.assistantChats)).map(([projectId,state])=>({projectId,...state}))
       };
     }
     function cloneWorkspaceSnapshot(value) {
@@ -2201,14 +2388,31 @@
       const localChats=local.assistantChats||{};
       const remoteChats=remote.assistantChats||{};
       const assistantChats={};
-      new Set([...Object.keys(baseChats),...Object.keys(localChats),...Object.keys(remoteChats)]).forEach(id=>{
-        const baseMessages=baseChats[id]||null;
-        const localMessages=localChats[id]||null;
-        const remoteMessages=remoteChats[id]||null;
-        const localChanged=JSON.stringify(localMessages)!==JSON.stringify(baseMessages);
-        const remoteChanged=JSON.stringify(remoteMessages)!==JSON.stringify(baseMessages);
-        const chosen=localChanged?localMessages:remoteMessages;
-        if(chosen)assistantChats[id]=chosen;
+      new Set([...Object.keys(baseChats),...Object.keys(localChats),...Object.keys(remoteChats)]).forEach(projectId=>{
+        const baseState=normalizeAssistantChatState(baseChats[projectId]);
+        const localState=normalizeAssistantChatState(localChats[projectId]);
+        const remoteState=normalizeAssistantChatState(remoteChats[projectId]);
+        const baseById=new Map(baseState.chats.map(chat=>[chat.id,chat]));
+        const localById=new Map(localState.chats.map(chat=>[chat.id,chat]));
+        const remoteById=new Map(remoteState.chats.map(chat=>[chat.id,chat]));
+        const chats=[];
+        new Set([...baseById.keys(),...localById.keys(),...remoteById.keys()]).forEach(chatId=>{
+          const baseChat=baseById.get(chatId)||null;
+          const localChat=localById.get(chatId)||null;
+          const remoteChat=remoteById.get(chatId)||null;
+          const localChanged=JSON.stringify(localChat)!==JSON.stringify(baseChat);
+          const remoteChanged=JSON.stringify(remoteChat)!==JSON.stringify(baseChat);
+          const chosen=localChanged?localChat:remoteChat;
+          if(chosen)chats.push(chosen);
+        });
+        const localActiveChanged=localState.activeChatId!==baseState.activeChatId;
+        const activeCandidate=localActiveChanged?localState.activeChatId:remoteState.activeChatId;
+        const activeChatId=chats.some(chat=>chat.id===activeCandidate)
+          ?activeCandidate
+          :chats.reduce((latest,chat)=>!latest||chat.updatedAt>latest.updatedAt?chat:latest,null)?.id||null;
+        if(chats.length||baseChats[projectId]||localChats[projectId]||remoteChats[projectId]){
+          assistantChats[projectId]={activeChatId,chats};
+        }
       });
       return {
         workspace:{projects:mergedProjects,activeProjectId,assistantChats},
