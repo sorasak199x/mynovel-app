@@ -388,11 +388,11 @@
     .group-chip { display:flex; align-items:center; gap:6px; border:1px solid var(--line); border-radius:20px; padding:4px 9px; color:#b9beb8; font-size:10px; }
     .group-swatch { width:8px; height:8px; border-radius:50%; }
     .character-record-list { display:grid; gap:14px; }
-    .character-record { border:1px solid var(--line); background:var(--panel); border-radius:var(--radius); padding:22px; }
-    .character-record-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:20px; }
+    .character-record { border:1px solid var(--line); background:var(--panel); border-radius:var(--radius); padding:18px; }
+    .character-record-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px; }
     .character-record-actions { display:flex; flex-wrap:wrap; gap:8px; }
     .character-record-name { min-width:0; font-size:15px; font-weight:650; }
-    .character-record-fields { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); column-gap:16px; }
+    .character-record-fields { display:grid; gap:14px; }
     .character-record-fields .field { min-width:0; }
     .character-record-fields input,.character-record-fields textarea,.character-record-fields select { display:block; width:100%; border:1px solid #404640; border-radius:8px; background:#222623; color:var(--text); outline:none; padding:11px 12px; font:inherit; font-size:12px; line-height:1.55; }
     .character-record-fields input,.character-record-fields select { height:42px; }
@@ -406,8 +406,8 @@
     .character-sex-option { width:100%; border:0; border-radius:5px; background:transparent; color:var(--text); padding:8px 10px; text-align:left; font-size:12px; }
     .character-sex-option:hover,.character-sex-option:focus { outline:none; background:#3a4238; color:var(--accent); }
     .character-record-fields textarea { min-height:86px; resize:vertical; }
-    .character-record-identity-fields { grid-column:1/-1; display:grid; grid-template-columns:150px minmax(190px,280px); gap:12px; align-items:start; }
-    .character-record-identity-fields .field { min-width:0; }
+    .character-record-identity-fields { display:grid; grid-template-columns:minmax(180px,1.3fr) minmax(130px,.8fr) minmax(220px,1fr); gap:12px; align-items:start; }
+    .character-record-identity-fields .field { min-width:0; margin-bottom:0; }
     .character-record-delete { border-color:#805b56; color:#e4a39b; }
     .character-record-delete:hover { border-color:#b8756b; background:#3a2927; }
     .character-custom-section { grid-column:1/-1; margin:2px 0 16px; }
@@ -794,8 +794,7 @@
       .chapter-list button { min-width:145px; }
       .chapter-editor textarea { min-height:45vh; }
       .calendar-layout { grid-template-columns:1fr; }
-      .character-record-fields { grid-template-columns:1fr; }
-      .character-record-identity-fields { grid-template-columns:minmax(100px,130px) minmax(0,1fr); gap:8px; }
+      .character-record-identity-fields { grid-template-columns:minmax(0,1.15fr) minmax(105px,.8fr) minmax(0,1.25fr); gap:8px; }
       .first-appearance-select { max-width:none; }
       .character-custom-row { grid-template-columns:minmax(0,1fr) 38px; align-items:center; gap:8px; }
       .character-custom-label { grid-column:1; }
@@ -841,6 +840,10 @@
       .treatment-episode-controls { grid-column:1/-1; justify-self:end; }
       .card { padding:17px; }
       .character-toolbar { align-items:flex-start; flex-direction:column; }
+    }
+    @media (max-width: 420px) {
+      .character-record-identity-fields { grid-template-columns:repeat(2,minmax(0,1fr)); }
+      .character-record-name-field { grid-column:1/-1; }
     }
     @media (max-width: 600px) {
       .app { display:block; min-height:100dvh; }
@@ -1338,11 +1341,10 @@
       <div class="field"><label for="character-name">ชื่อตัวละคร</label><input id="character-name" required maxlength="50" placeholder="ชื่อตัวละคร"></div>
       <div class="two-fields">
         <div class="field"><label for="character-role">บทบาท</label><input id="character-role" maxlength="40" placeholder="เช่น ตัวเอก"></div>
-        <div class="field"><label for="character-group">กลุ่มตัวละคร</label><input id="character-group" maxlength="40" placeholder="เช่น ราชสำนัก, ครอบครัว"></div>
+        <div class="field"><label for="character-group">กลุ่มตัวละคร</label><input id="character-group" maxlength="40" placeholder="เช่น กลุ่มนักเดินทาง, ครอบครัว"></div>
       </div>
       <div class="field"><label>สีประจำกลุ่ม · เลือกจาก 10 เฉดสี</label><div class="color-picker" id="character-color-picker" role="group" aria-label="เลือกสีประจำกลุ่ม"></div></div>
-      <div class="field"><label for="character-details">รายละเอียด</label><textarea id="character-details" maxlength="500" placeholder="นิสัย เป้าหมาย หรือรายละเอียดที่อยากจำ"></textarea></div>
-      <div class="dialog-actions"><div style="display:flex;gap:8px"><button class="button delete-button" id="delete-character" type="button" style="display:none">ลบตัวละคร</button><button class="button" id="open-character-record" type="button" style="display:none">ดูข้อมูลตัวละคร</button></div><div class="dialog-actions-right"><button class="button" id="cancel-dialog" type="button">ยกเลิก</button><button class="button primary" type="submit">บันทึกตัวละคร</button></div></div>
+      <div class="dialog-actions"><button class="button delete-button" id="delete-character" type="button" style="display:none">ลบตัวละคร</button><div class="dialog-actions-right"><button class="button" id="open-character-record" type="button" style="display:none">ดูข้อมูลตัวละคร</button></div></div>
     </form>
   </dialog>
   <dialog id="character-field-dialog" aria-labelledby="character-field-dialog-title">
@@ -1742,7 +1744,6 @@
     let pendingTimelineFocusId = null;
     let pendingCharacterFocusId = null;
     let pendingCharacterRecordFocusId = null;
-    let openCharacterDetailsAfterSave = false;
     let graphPositions = {};
     let graphDrag = null;
     let graphEdgeDrag = null;
@@ -5867,9 +5868,9 @@
             </div>
           </div>
           <div class="character-record-fields">
-            <div class="field"><label>ชื่อ</label><input data-character-record-id="${escapeHTML(person.id)}" data-character-field="name" maxlength="50" value="${escapeHTML(person.name||"")}" placeholder="ชื่อตัวละคร"></div>
             <div class="character-record-identity-fields">
-              <div class="field"><label for="character-sex-${escapeHTML(person.id)}">เพศ</label>
+              <div class="field character-record-name-field"><label>ชื่อ</label><input data-character-record-id="${escapeHTML(person.id)}" data-character-field="name" maxlength="50" value="${escapeHTML(person.name||"")}" placeholder="ชื่อตัวละคร"></div>
+              <div class="field character-record-sex-field"><label for="character-sex-${escapeHTML(person.id)}">เพศ</label>
                 <div class="character-sex-control">
                   <input id="character-sex-${escapeHTML(person.id)}" data-character-record-id="${escapeHTML(person.id)}" data-character-field="sex" aria-label="เลือกหรือกรอกเพศของ ${escapeHTML(person.name||"ตัวละคร")}" maxlength="50" placeholder="เลือกหรือพิมพ์เพศ" value="${escapeHTML(person.sex||"")}">
                   <button type="button" class="character-sex-toggle" data-toggle-character-sex="${escapeHTML(person.id)}" aria-label="เลือกเพศ" aria-expanded="false">⌄</button>
@@ -5880,7 +5881,7 @@
                   </div>
                 </div>
               </div>
-              <div class="field"><label>ตอนที่ปรากฏตัวครั้งแรก</label><div class="first-appearance-control">
+              <div class="field character-record-first-appearance-field"><label>ตอนที่ปรากฏตัวครั้งแรก</label><div class="first-appearance-control">
               <select class="first-appearance-select" data-character-record-id="${escapeHTML(person.id)}" data-character-field="firstAppearanceChapterId" aria-label="เลือกตอนที่ ${escapeHTML(person.name||"ตัวละคร")} ปรากฏตัวครั้งแรก">
                 <option value="" ${!person.firstAppearanceChapterId&&!person.firstAppearance?"selected":""}>ยังไม่ได้เลือกตอน</option>
                 ${person.firstAppearance&&!data.chapters.some(chapter=>chapter.id===person.firstAppearanceChapterId)?`<option value="__legacy__" selected>${escapeHTML(person.firstAppearance)}</option>`:""}
@@ -6893,6 +6894,7 @@
       const choice=event.target.closest("[data-color]");
       if(!choice)return;
       renderCharacterColorPicker(choice.dataset.color);
+      saveCharacterRecord();
     });
     function openCharacter(id = "") {
       const person = data.characters.find(item => item.id === id);
@@ -6904,7 +6906,6 @@
       $("#character-group").value = person?.group || "";
       renderCharacterColorPicker(selectedColor);
       characterColorPicker.dataset.originalColor = selectedColor;
-      $("#character-details").value = person?.details || "";
       $("#delete-character").style.display = person ? "inline-block" : "none";
       $("#open-character-record").style.display = person ? "inline-block" : "none";
       characterDialog.showModal();
@@ -6912,20 +6913,19 @@
     }
     $("#add-character").addEventListener("click", addCharacter);
     $("#close-dialog").addEventListener("click", () => characterDialog.close());
-    $("#cancel-dialog").addEventListener("click", () => characterDialog.close());
     $("#open-character-record").addEventListener("click",()=>{
-      if(!$("#character-id").value)return;
-      if(!$("#character-form").reportValidity())return;
-      openCharacterDetailsAfterSave=true;
-      $("#character-form").requestSubmit();
+      const person=saveCharacterRecord();
+      if(!person)return;
+      characterDialog.close();
+      pendingCharacterRecordFocusId=person.id;
+      showPage("character-info");
     });
-    $("#character-form").addEventListener("submit", event => {
-      event.preventDefault();
+    function saveCharacterRecord() {
+      if(!data)return null;
       const id = $("#character-id").value;
       const existingPerson=data.characters.find(item=>item.id===id);
-      const returnToCharacterInfo=$("#character-info").classList.contains("active");
-      const openDetails=openCharacterDetailsAfterSave;
-      openCharacterDetailsAfterSave=false;
+      const name=$("#character-name").value.trim();
+      if(!name)return null;
       const group = $("#character-group").value.trim();
       const selectedColor=characterColorPicker.querySelector('[aria-pressed="true"]')?.dataset.color||colorFor(data.characters.length);
       const existingGroupMember = data.characters.find(item => item.group === group && item.id !== id);
@@ -6934,9 +6934,8 @@
       const person = {
         ...(existingPerson||{}),
         id:id || `character-${Date.now()}`,
-        name:$("#character-name").value.trim(),
+        name,
         role:$("#character-role").value.trim(),
-        details:$("#character-details").value.trim(),
         sex:existingPerson?.sex||"",
         firstAppearance:existingPerson?.firstAppearance||"",
         notes:existingPerson?.notes||"",
@@ -6944,15 +6943,23 @@
         group,
         color:groupColor
       };
-      if (id) data.characters[data.characters.findIndex(item => item.id === id)] = person;
-      else data.characters.push(person);
-      if (group) data.characters.forEach(item => { if (item.group === group) item.color = person.color; });
-      save(); renderCharacters(); renderCharacterRecords(); renderLibrary(); characterDialog.close();
-      if(returnToCharacterInfo)showPage("character-info");
-      if(openDetails){
-        pendingCharacterRecordFocusId=person.id;
-        showPage("character-info");
+      if (id&&existingPerson) data.characters[data.characters.findIndex(item => item.id === id)] = person;
+      else {
+        $("#character-id").value=person.id;
+        data.characters.push(person);
+        $("#delete-character").style.display="inline-block";
+        $("#open-character-record").style.display="inline-block";
       }
+      if (group) data.characters.forEach(item => { if (item.group === group) item.color = person.color; });
+      save(); renderCharacters(); renderCharacterRecords(); renderLibrary();
+      return person;
+    }
+    $("#character-form").addEventListener("input",event=>{
+      if(event.target.matches("#character-name,#character-role,#character-group"))saveCharacterRecord();
+    });
+    $("#character-form").addEventListener("submit",event=>{
+      event.preventDefault();
+      saveCharacterRecord();
     });
     $("#delete-character").addEventListener("click", () => {
       const id = $("#character-id").value;
