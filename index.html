@@ -619,12 +619,16 @@
     .phrase-search-status { color:var(--muted); font-size:10px; white-space:nowrap; }
     .phrase-entry-list { display:grid; gap:12px; }
     .phrase-entry-card { min-width:0; padding:10px 14px; border:1px solid var(--line); border-radius:var(--radius); background:var(--panel); }
-    .phrase-entry-heading { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:9px; color:var(--muted); font-size:11px; }
+    .phrase-entry-heading { display:flex; align-items:center; justify-content:flex-start; gap:8px; margin-bottom:9px; color:var(--muted); font-size:11px; }
+    .phrase-entry-heading > span { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .phrase-entry-heading .phrase-entry-delete { flex:none; margin-left:auto; }
     .phrase-entry-text { display:block; box-sizing:border-box; width:100%; height:40px; min-height:40px; overflow:hidden; resize:none; border:1px solid transparent; border-radius:7px; background:transparent; color:var(--text); outline:none; padding:7px 9px; font:14px/1.4 "Sarabun","Noto Sans Thai","Leelawadee UI",system-ui,sans-serif; }
     .field textarea.phrase-entry-text { min-height:40px; overflow:hidden; resize:none; }
     .phrase-entry-text:focus { border-color:#667c6e; background:#222623; }
+    .phrase-entry-tags { display:block; box-sizing:border-box; flex:0 1 120px; width:100%; min-width:0; height:27px; margin:0; border:1px solid #393e3a; border-radius:7px; background:#222623; color:var(--muted); outline:none; padding:3px 7px; font-family:inherit; font-size:10px; line-height:1.4; }
+    .phrase-entry-tags:focus { border-color:#667c6e; color:var(--text); }
     .phrase-empty-state { padding:24px; border:1px dashed #495048; border-radius:var(--radius); color:var(--muted); font-size:12px; line-height:1.7; text-align:center; }
-    .phrase-add-floating { position:fixed; z-index:49; right:94px; bottom:22px; white-space:nowrap; box-shadow:0 8px 24px #0007; }
+    .quick-add-floating { position:fixed; z-index:49; right:94px; bottom:22px; white-space:nowrap; box-shadow:0 8px 24px #0007; }
     .assistant-widget { position:fixed; z-index:50; right:24px; bottom:22px; }
     .assistant-launcher { width:56px; height:56px; display:grid; place-items:center; border:1px solid #d5e0bb; border-radius:50%; background:var(--accent); color:#273022; box-shadow:0 8px 26px #0008; }
     .assistant-launcher:hover { transform:translateY(-2px); background:#d2dfb0; }
@@ -961,7 +965,7 @@
       .assistant-compose textarea { min-width:0; padding:9px; }
       .assistant-compose button { padding:8px 10px; }
       .assistant-widget { right:12px; bottom:calc(12px + env(safe-area-inset-bottom)); }
-      .phrase-add-floating { right:80px; bottom:calc(12px + env(safe-area-inset-bottom)); }
+      .quick-add-floating { right:80px; bottom:calc(12px + env(safe-area-inset-bottom)); }
       .assistant-panel { right:0; bottom:64px; width:calc(100vw - 24px); height:min(660px,calc(100dvh - 90px - env(safe-area-inset-top))); }
       dialog { max-height:calc(100dvh - 24px); overflow:auto; }
       .dialog-inner { padding:18px; }
@@ -1247,6 +1251,7 @@
           <div class="treatment-list" id="treatment-list"></div>
           <div class="empty-note" id="treatment-empty">ยังไม่มีตอนในทรีตเมนต์ กด “เพิ่มตอนในทรีตเมนต์” เพื่อเริ่มวางโครงเรื่อง</div>
           <div class="treatment-actions"><span class="treatment-count" id="treatment-count">0 ตอน</span></div>
+          <button type="button" class="button primary quick-add-floating" id="add-treatment-episode-floating">＋ เพิ่มตอนในทรีตเมนต์</button>
         </section>
         <section class="page" id="timeline">
           <div class="page-heading">
@@ -1311,7 +1316,7 @@
             <label class="phrase-search-wrap" aria-label="ค้นหาสำนวนในทุกหมวด"><span aria-hidden="true">⌕</span><input type="search" id="phrase-search" placeholder="ค้นหาสำนวนในทุกหมวด" autocomplete="off"><span class="phrase-search-status" id="phrase-search-status" aria-live="polite" hidden></span></label>
           </div>
           <div class="phrase-entry-list" id="phrase-entry-list"></div>
-          <button type="button" class="button primary phrase-add-floating" id="add-phrase-entry-floating" disabled>＋ เพิ่มสำนวน</button>
+          <button type="button" class="button primary quick-add-floating" id="add-phrase-entry-floating" disabled>＋ เพิ่มสำนวน</button>
         </section>
         <section class="page" id="assistant">
           <div class="page-heading">
@@ -1488,6 +1493,7 @@
     <form id="phrase-entry-form" class="dialog-inner">
       <div class="dialog-heading"><h2 id="phrase-entry-dialog-title">เพิ่มสำนวน</h2><button class="close-button" type="button" id="close-phrase-entry-dialog" aria-label="ปิด">×</button></div>
       <div class="field"><label for="phrase-entry-text">ข้อความสำนวน</label><textarea id="phrase-entry-text" class="phrase-entry-text" rows="1" required maxlength="4000" placeholder="พิมพ์สำนวนหรือข้อความที่อยากเก็บไว้เป็นเรฟ"></textarea></div>
+      <div class="field"><label for="phrase-entry-tags">แท็ก</label><input id="phrase-entry-tags" type="text" maxlength="300" placeholder="คั่นแต่ละแท็กด้วย , เช่น ฝน, บรรยากาศ, เศร้า"></div>
       <div class="dialog-actions"><div class="dialog-actions-right"><button class="button" type="button" id="cancel-phrase-entry-dialog">ยกเลิก</button><button class="button primary" type="submit">บันทึกสำนวน</button></div></div>
     </form>
   </dialog>
@@ -1644,7 +1650,8 @@
         name:typeof category.name==="string"?category.name:"",
         entries:Array.isArray(category.entries)?category.entries.filter(entry=>entry&&typeof entry==="object").map((entry,entryIndex)=>({
           id:typeof entry.id==="string"&&entry.id?entry.id:`phrase-entry-${Date.now()}-${index}-${entryIndex}`,
-          text:typeof entry.text==="string"?entry.text:""
+          text:typeof entry.text==="string"?entry.text:"",
+          tags:Array.isArray(entry.tags)?parsePhraseTags(entry.tags.filter(tag=>typeof tag==="string").join(",")):typeof entry.tags==="string"?parsePhraseTags(entry.tags):[]
         })): []
       })): [];
       return {categories};
@@ -1671,6 +1678,16 @@
     };
     const $ = selector => document.querySelector(selector);
     const escapeHTML = value => String(value ?? "").replace(/[&<>"']/g, char => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[char]));
+    function parsePhraseTags(value) {
+      const tags=String(value??"").split(/[,，]/).map(tag=>tag.trim()).filter(Boolean);
+      const seen=new Set();
+      return tags.filter(tag=>{
+        const key=tag.toLocaleLowerCase();
+        if(seen.has(key))return false;
+        seen.add(key);
+        return true;
+      });
+    }
     const colorFor = index => palette[index % palette.length];
     const safeColor = (value,fallback) => /^#[0-9a-f]{6}$/i.test(value || "") ? value : fallback;
     function normalizeNovel(novel) {
@@ -5705,13 +5722,13 @@
       const activeCategory=categories.find(category=>category.id===activePhraseCategoryId)||null;
       if(query){
         const matches=categories.flatMap(category=>category.entries.map((entry,index)=>({category,entry,index})).filter(({category,entry})=>
-          `${category.name} ${entry.text}`.toLocaleLowerCase().includes(query)
+          `${category.name} ${entry.text} ${(entry.tags||[]).join(" ")}`.toLocaleLowerCase().includes(query)
         ));
         $("#phrase-search-status").hidden=false;
         $("#phrase-search-status").textContent=`${matches.length} รายการ`;
         $("#phrase-entry-list").innerHTML=matches.length?matches.map(({category,entry,index})=>`
           <article class="phrase-entry-card">
-            <div class="phrase-entry-heading"><span>${escapeHTML(category.name||"หมวดที่ยังไม่มีชื่อ")} · สำนวน ${index+1}</span><button type="button" class="phrase-entry-delete" data-delete-phrase-entry="${escapeHTML(entry.id)}" aria-label="ลบสำนวนที่ ${index+1}">ลบสำนวน</button></div>
+            <div class="phrase-entry-heading"><span>${escapeHTML(category.name||"หมวดที่ยังไม่มีชื่อ")} · สำนวน ${index+1}</span><input type="text" class="phrase-entry-tags" data-phrase-entry-tags="${escapeHTML(entry.id)}" data-phrase-category="${escapeHTML(category.id)}" maxlength="300" aria-label="แท็กสำนวนที่ ${index+1}" placeholder="แท็ก" value="${escapeHTML((entry.tags||[]).join(", "))}"><button type="button" class="phrase-entry-delete" data-delete-phrase-entry="${escapeHTML(entry.id)}" aria-label="ลบสำนวนที่ ${index+1}">ลบสำนวน</button></div>
             <textarea class="phrase-entry-text" rows="1" data-phrase-entry="${escapeHTML(entry.id)}" data-phrase-category="${escapeHTML(category.id)}" maxlength="4000" aria-label="ข้อความสำนวนที่ ${index+1}" placeholder="พิมพ์สำนวนหรือข้อความที่อยากเก็บไว้เป็นเรฟ">${escapeHTML(entry.text)}</textarea>
           </article>`).join(""):`<div class="phrase-empty-state">ไม่พบสำนวนที่ตรงกับ “${escapeHTML(query)}”</div>`;
         resizePhraseEntries();
@@ -5721,7 +5738,7 @@
       $("#phrase-entry-list").innerHTML=activeCategory
         ?activeCategory.entries.length?activeCategory.entries.map((entry,index)=>`
           <article class="phrase-entry-card">
-            <div class="phrase-entry-heading"><span>สำนวน ${index+1}</span><button type="button" class="phrase-entry-delete" data-delete-phrase-entry="${escapeHTML(entry.id)}" aria-label="ลบสำนวนที่ ${index+1}">ลบสำนวน</button></div>
+            <div class="phrase-entry-heading"><span>สำนวน ${index+1}</span><input type="text" class="phrase-entry-tags" data-phrase-entry-tags="${escapeHTML(entry.id)}" data-phrase-category="${escapeHTML(activeCategory.id)}" maxlength="300" aria-label="แท็กสำนวนที่ ${index+1}" placeholder="แท็ก" value="${escapeHTML((entry.tags||[]).join(", "))}"><button type="button" class="phrase-entry-delete" data-delete-phrase-entry="${escapeHTML(entry.id)}" aria-label="ลบสำนวนที่ ${index+1}">ลบสำนวน</button></div>
             <textarea class="phrase-entry-text" rows="1" data-phrase-entry="${escapeHTML(entry.id)}" data-phrase-category="${escapeHTML(activeCategory.id)}" maxlength="4000" aria-label="ข้อความสำนวนที่ ${index+1}" placeholder="พิมพ์สำนวนหรือข้อความที่อยากเก็บไว้เป็นเรฟ">${escapeHTML(entry.text)}</textarea>
           </article>`).join("")
         :`<div class="phrase-empty-state">หมวด “${escapeHTML(activeCategory.name||"หมวดที่ยังไม่มีชื่อ")}” ยังไม่มีสำนวน<br>กด “เพิ่มสำนวน” เพื่อเก็บข้อความแรก</div>`
@@ -5778,8 +5795,9 @@
       if(!data)return;
       const category=data.phraseLibrary.categories.find(item=>item.id===activePhraseCategoryId);
       const text=$("#phrase-entry-text").value;
+      const tags=parsePhraseTags($("#phrase-entry-tags").value);
       if(!category||!text.trim())return;
-      const entry={id:`phrase-entry-${Date.now()}-${Math.random().toString(36).slice(2,7)}`,text};
+      const entry={id:`phrase-entry-${Date.now()}-${Math.random().toString(36).slice(2,7)}`,text,tags};
       category.entries.push(entry);
       $("#phrase-search").value="";
       save();
@@ -5831,6 +5849,15 @@
       });
     });
     $("#phrase-entry-list").addEventListener("input",event=>{
+      const tagsInput=event.target.closest("[data-phrase-entry-tags]");
+      if(tagsInput){
+        const category=data?.phraseLibrary.categories.find(item=>item.id===tagsInput.dataset.phraseCategory);
+        const entry=category?.entries.find(item=>item.id===tagsInput.dataset.phraseEntryTags);
+        if(!entry)return;
+        entry.tags=parsePhraseTags(tagsInput.value);
+        save(800);
+        return;
+      }
       const input=event.target.closest("[data-phrase-entry]");
       if(!(input instanceof HTMLTextAreaElement))return;
       resizePhraseEntry(input);
@@ -5841,7 +5868,7 @@
       save(800);
     });
     $("#phrase-entry-list").addEventListener("change",event=>{
-      if(event.target.closest("[data-phrase-entry]"))save();
+      if(event.target.closest("[data-phrase-entry],[data-phrase-entry-tags]"))save();
     });
     $("#phrase-entry-list").addEventListener("click",event=>{
       const remove=event.target.closest("[data-delete-phrase-entry]");
@@ -6857,7 +6884,7 @@
       save();
       renderTreatment();
     });
-    $("#add-treatment-episode").addEventListener("click",()=>{
+    const addTreatmentEpisode=()=>{
       if(!data)return;
       const episode={
         id:`treatment-${Date.now()}-${Math.random().toString(36).slice(2,7)}`,
@@ -6870,7 +6897,9 @@
       save();
       renderTreatment();
       $(`#treatment-title-${episode.id}`)?.focus();
-    });
+    };
+    $("#add-treatment-episode").addEventListener("click",addTreatmentEpisode);
+    $("#add-treatment-episode-floating").addEventListener("click",addTreatmentEpisode);
     function currentTimeline() {
       if(!data)return null;
       const timelines=data.treatment.timelines;
