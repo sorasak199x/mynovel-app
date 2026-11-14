@@ -624,6 +624,7 @@
     .field textarea.phrase-entry-text { min-height:40px; overflow:hidden; resize:none; }
     .phrase-entry-text:focus { border-color:#667c6e; background:#222623; }
     .phrase-empty-state { padding:24px; border:1px dashed #495048; border-radius:var(--radius); color:var(--muted); font-size:12px; line-height:1.7; text-align:center; }
+    .phrase-add-floating { position:fixed; z-index:49; right:94px; bottom:22px; white-space:nowrap; box-shadow:0 8px 24px #0007; }
     .assistant-widget { position:fixed; z-index:50; right:24px; bottom:22px; }
     .assistant-launcher { width:56px; height:56px; display:grid; place-items:center; border:1px solid #d5e0bb; border-radius:50%; background:var(--accent); color:#273022; box-shadow:0 8px 26px #0008; }
     .assistant-launcher:hover { transform:translateY(-2px); background:#d2dfb0; }
@@ -960,6 +961,7 @@
       .assistant-compose textarea { min-width:0; padding:9px; }
       .assistant-compose button { padding:8px 10px; }
       .assistant-widget { right:12px; bottom:calc(12px + env(safe-area-inset-bottom)); }
+      .phrase-add-floating { right:80px; bottom:calc(12px + env(safe-area-inset-bottom)); }
       .assistant-panel { right:0; bottom:64px; width:calc(100vw - 24px); height:min(660px,calc(100dvh - 90px - env(safe-area-inset-top))); }
       dialog { max-height:calc(100dvh - 24px); overflow:auto; }
       .dialog-inner { padding:18px; }
@@ -1309,6 +1311,7 @@
             <label class="phrase-search-wrap" aria-label="ค้นหาสำนวนในทุกหมวด"><span aria-hidden="true">⌕</span><input type="search" id="phrase-search" placeholder="ค้นหาสำนวนในทุกหมวด" autocomplete="off"><span class="phrase-search-status" id="phrase-search-status" aria-live="polite" hidden></span></label>
           </div>
           <div class="phrase-entry-list" id="phrase-entry-list"></div>
+          <button type="button" class="button primary phrase-add-floating" id="add-phrase-entry-floating" disabled>＋ เพิ่มสำนวน</button>
         </section>
         <section class="page" id="assistant">
           <div class="page-heading">
@@ -5685,6 +5688,7 @@
       $("#rename-phrase-category").dataset.renamePhraseCategory=activeCategory?.id||"";
       $("#delete-phrase-category").dataset.deletePhraseCategory=activeCategory?.id||"";
       $("#add-phrase-entry").disabled=!activeCategory;
+      $("#add-phrase-entry-floating").disabled=!activeCategory;
       renderPhraseLibraryEntries();
     }
     function resizePhraseEntry(textarea) {
@@ -5757,13 +5761,15 @@
     const phraseEntryDialog=$("#phrase-entry-dialog");
     const phraseEntryText=$("#phrase-entry-text");
     const closePhraseEntryDialog=()=>phraseEntryDialog.close();
-    $("#add-phrase-entry").addEventListener("click",()=>{
+    const openPhraseEntryDialog=()=>{
       if(!data?.phraseLibrary.categories.some(category=>category.id===activePhraseCategoryId))return;
       $("#phrase-entry-form").reset();
       resizePhraseEntry(phraseEntryText);
       phraseEntryDialog.showModal();
       phraseEntryText.focus();
-    });
+    };
+    $("#add-phrase-entry").addEventListener("click",openPhraseEntryDialog);
+    $("#add-phrase-entry-floating").addEventListener("click",openPhraseEntryDialog);
     phraseEntryText.addEventListener("input",()=>resizePhraseEntry(phraseEntryText));
     $("#close-phrase-entry-dialog").addEventListener("click",closePhraseEntryDialog);
     $("#cancel-phrase-entry-dialog").addEventListener("click",closePhraseEntryDialog);
