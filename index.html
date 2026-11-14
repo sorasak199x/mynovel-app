@@ -593,6 +593,37 @@
     .chapter-editor input { font-size:18px; font-weight:600; }
     .chapter-editor textarea { min-height:58vh; line-height:1.9; font-size:14px; }
     .chapter-editor-footer { display:flex; justify-content:space-between; align-items:center; color:var(--muted); font-size:11px; gap:10px; }
+    .phrase-tools-row { display:grid; grid-template-columns:minmax(190px,.75fr) minmax(320px,1.25fr); align-items:center; gap:12px; margin-bottom:14px; }
+    .phrase-category-control { display:grid; grid-template-columns:minmax(0,1fr) 34px; align-items:center; gap:4px; min-width:0; }
+    .phrase-category-control select { width:100%; min-width:0; height:40px; border:1px solid #404640; border-radius:8px; background:#222623; color:var(--text); padding:7px 10px; font:inherit; font-size:12px; }
+    .phrase-category-control select:focus { outline:none; border-color:#9eaf82; }
+    .phrase-category-control select:disabled { opacity:.6; }
+    .phrase-category-action,.phrase-entry-delete { border:0; border-radius:6px; background:transparent; color:var(--muted); padding:6px 8px; }
+    .phrase-category-action { display:grid; width:34px; height:34px; place-items:center; }
+    .phrase-category-action:hover,.phrase-entry-delete:hover { background:#3a302e; color:#efaaa1; }
+    .phrase-category-action:disabled { opacity:.45; cursor:not-allowed; }
+    .phrase-category-rename-icon { display:inline-block; transform:scaleX(-1); }
+    .phrase-category-options { position:relative; }
+    .phrase-category-options summary { display:grid; width:34px; height:34px; place-items:center; border-radius:6px; color:var(--muted); cursor:pointer; font-size:17px; list-style:none; }
+    .phrase-category-options summary::-webkit-details-marker { display:none; }
+    .phrase-category-options summary:hover,.phrase-category-options[open] summary { background:#343a35; color:var(--text); }
+    .phrase-category-options-menu { position:absolute; z-index:20; top:calc(100% + 4px); right:0; min-width:116px; padding:4px; border:1px solid #485047; border-radius:8px; background:#282d29; box-shadow:0 10px 24px #0008; }
+    .phrase-category-options-menu button { width:100%; border:0; border-radius:5px; background:transparent; color:var(--text); padding:8px 10px; text-align:left; font-size:12px; }
+    .phrase-category-options-menu button[data-delete-phrase-category] { color:#efaaa1; }
+    .phrase-category-options-menu button:hover { background:#3a302e; }
+    .phrase-category-options[hidden] { display:none; }
+    .phrase-search-wrap { display:grid; grid-template-columns:18px minmax(0,1fr) auto; align-items:center; gap:8px; width:100%; min-width:0; margin:0; border:1px solid #404640; border-radius:8px; background:#222623; color:var(--muted); padding:0 10px; }
+    .phrase-search-wrap:focus-within { border-color:#9eaf82; }
+    .phrase-search-wrap input { width:100%; min-width:0; height:40px; border:0; outline:0; background:transparent; color:var(--text); font:inherit; font-size:12px; }
+    .phrase-search-wrap input::placeholder { color:var(--muted); }
+    .phrase-search-status { color:var(--muted); font-size:10px; white-space:nowrap; }
+    .phrase-entry-list { display:grid; gap:12px; }
+    .phrase-entry-card { min-width:0; padding:10px 14px; border:1px solid var(--line); border-radius:var(--radius); background:var(--panel); }
+    .phrase-entry-heading { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:9px; color:var(--muted); font-size:11px; }
+    .phrase-entry-text { display:block; box-sizing:border-box; width:100%; height:40px; min-height:40px; overflow:hidden; resize:none; border:1px solid transparent; border-radius:7px; background:transparent; color:var(--text); outline:none; padding:7px 9px; font:14px/1.4 "Sarabun","Noto Sans Thai","Leelawadee UI",system-ui,sans-serif; }
+    .field textarea.phrase-entry-text { min-height:40px; overflow:hidden; resize:none; }
+    .phrase-entry-text:focus { border-color:#667c6e; background:#222623; }
+    .phrase-empty-state { padding:24px; border:1px dashed #495048; border-radius:var(--radius); color:var(--muted); font-size:12px; line-height:1.7; text-align:center; }
     .assistant-widget { position:fixed; z-index:50; right:24px; bottom:22px; }
     .assistant-launcher { width:56px; height:56px; display:grid; place-items:center; border:1px solid #d5e0bb; border-radius:50%; background:var(--accent); color:#273022; box-shadow:0 8px 26px #0008; }
     .assistant-launcher:hover { transform:translateY(-2px); background:#d2dfb0; }
@@ -901,6 +932,7 @@
       .page-heading,.heading-actions,.map-actions,.character-toolbar,.worldbuilding-toolbar { min-width:0; width:100%; }
       .heading-actions .button { flex:1 1 auto; }
       .overview-grid,.calendar-layout,.chapter-layout,.map-workspace { grid-template-columns:minmax(0,1fr); }
+      .phrase-tools-row { grid-template-columns:minmax(0,1fr); }
       .card { min-width:0; }
       .two-fields { grid-template-columns:minmax(0,1fr); gap:0; }
       .field input,.field textarea,.field select,.custom-select-trigger,.assistant-compose textarea { font-size:16px; }
@@ -957,6 +989,7 @@
         <button data-page="treatment"><span class="nav-icon">≋</span><span class="nav-text">ทรีตเมนต์</span></button>
         <button data-page="timeline"><span class="nav-icon">◷</span><span class="nav-text">ไทม์ไลน์</span></button>
         <button data-page="chapters"><span class="nav-icon">✎</span><span class="nav-text">เนื้อหารายตอน</span></button>
+        <button data-page="phrases"><span class="nav-icon">❝</span><span class="nav-text">คลังสำนวน</span></button>
         <button data-page="assistant"><span class="nav-icon">✦</span><span class="nav-text">ปรึกษานิยาย</span></button>
       </nav>
       <div class="side-bottom">
@@ -1260,6 +1293,23 @@
             </div>
           </div>
         </section>
+        <section class="page" id="phrases">
+          <div class="page-heading">
+            <div><div class="eyebrow">WRITING PHRASEBOOK</div><h1>คลังสำนวน</h1><p class="subtitle">เก็บสำนวนและข้อความอ้างอิงสำหรับงานเขียน แยกเป็นหมวดตามต้องการ</p></div>
+            <div class="heading-actions"><button type="button" class="button" id="add-phrase-category">＋ เพิ่มหมวด</button><button type="button" class="button primary" id="add-phrase-entry" disabled>＋ เพิ่มสำนวน</button></div>
+          </div>
+          <div class="phrase-tools-row">
+            <div class="phrase-category-control" id="phrase-category-control">
+              <select id="phrase-category-select" aria-label="เลือกหมวดสำนวน" disabled><option value="">ยังไม่มีหมวดหมู่</option></select>
+              <details class="phrase-category-options" id="phrase-category-options" hidden>
+                <summary id="phrase-category-menu-trigger" aria-label="จัดการหมวดสำนวน" title="จัดการหมวดสำนวน"><span class="phrase-category-rename-icon" aria-hidden="true">✎</span></summary>
+                <div class="phrase-category-options-menu"><button type="button" id="rename-phrase-category">แก้ไขชื่อหมวด</button><button type="button" id="delete-phrase-category">ลบหมวด</button></div>
+              </details>
+            </div>
+            <label class="phrase-search-wrap" aria-label="ค้นหาสำนวนในทุกหมวด"><span aria-hidden="true">⌕</span><input type="search" id="phrase-search" placeholder="ค้นหาสำนวนในทุกหมวด" autocomplete="off"><span class="phrase-search-status" id="phrase-search-status" aria-live="polite" hidden></span></label>
+          </div>
+          <div class="phrase-entry-list" id="phrase-entry-list"></div>
+        </section>
         <section class="page" id="assistant">
           <div class="page-heading">
             <div><div class="eyebrow">WRITING COMPANION</div><h1>ปรึกษานิยาย</h1><p class="subtitle">คุยเรื่องพล็อต ตัวละคร และต้นฉบับ โดยอ้างอิงข้อมูลนิยายเรื่องที่เปิดอยู่</p></div>
@@ -1424,6 +1474,20 @@
       <div class="dialog-actions"><div class="dialog-actions-right"><button class="button" id="cancel-delete-novel" type="button">ยกเลิก</button><button class="button delete-button" id="confirm-delete-novel" type="button" disabled>ลบนิยายถาวร</button></div></div>
     </div>
   </dialog>
+  <dialog id="phrase-category-dialog" aria-labelledby="phrase-category-dialog-title">
+    <form id="phrase-category-form" class="dialog-inner">
+      <div class="dialog-heading"><h2 id="phrase-category-dialog-title">เพิ่มหมวดสำนวน</h2><button class="close-button" type="button" id="close-phrase-category-dialog" aria-label="ปิด">×</button></div>
+      <div class="field"><label for="phrase-category-name">ชื่อหมวด</label><input id="phrase-category-name" required maxlength="60" placeholder="เช่น บรรยากาศ, อารมณ์, บทสนทนา"></div>
+      <div class="dialog-actions"><div class="dialog-actions-right"><button class="button" type="button" id="cancel-phrase-category-dialog">ยกเลิก</button><button class="button primary" type="submit" id="save-phrase-category">เพิ่มหมวด</button></div></div>
+    </form>
+  </dialog>
+  <dialog id="phrase-entry-dialog" aria-labelledby="phrase-entry-dialog-title">
+    <form id="phrase-entry-form" class="dialog-inner">
+      <div class="dialog-heading"><h2 id="phrase-entry-dialog-title">เพิ่มสำนวน</h2><button class="close-button" type="button" id="close-phrase-entry-dialog" aria-label="ปิด">×</button></div>
+      <div class="field"><label for="phrase-entry-text">ข้อความสำนวน</label><textarea id="phrase-entry-text" class="phrase-entry-text" rows="1" required maxlength="4000" placeholder="พิมพ์สำนวนหรือข้อความที่อยากเก็บไว้เป็นเรฟ"></textarea></div>
+      <div class="dialog-actions"><div class="dialog-actions-right"><button class="button" type="button" id="cancel-phrase-entry-dialog">ยกเลิก</button><button class="button primary" type="submit">บันทึกสำนวน</button></div></div>
+    </form>
+  </dialog>
   <div class="auth-gate" id="auth-gate" role="dialog" aria-modal="true" aria-labelledby="auth-title">
     <section class="auth-card">
       <div class="auth-brand"><div class="brand-mark">f</div><div><div class="brand-name">fable</div><div class="brand-note">your story, taking shape</div></div></div>
@@ -1450,6 +1514,7 @@
     const emptyChecklist = () => ({ items:[], currentId:null });
     const emptyTreatment = () => ({ premise:"", theme:"", stakes:"", ending:"", opening:"", middle:"", climax:"", subplots:"", episodes:[], timeline:[], timelines:[], activeTimelineId:null });
     const emptyWorldbuilding = () => ({customSections:[],linkedPages:[]});
+    const emptyPhraseLibrary = () => ({categories:[]});
     const makeWorldMap = (name="แผนที่หลัก") => ({
       id:`world-map-${Date.now()}-${Math.random().toString(36).slice(2,7)}`,
       name,description:"",baseTerrainId:"ocean",objects:[]
@@ -1570,6 +1635,17 @@
         linkedPages:savedLinkedPages
       };
     }
+    function normalizePhraseLibrary(savedLibrary) {
+      const categories=Array.isArray(savedLibrary?.categories)?savedLibrary.categories.filter(category=>category&&typeof category==="object").map((category,index)=>({
+        id:typeof category.id==="string"&&category.id?category.id:`phrase-category-${Date.now()}-${index}`,
+        name:typeof category.name==="string"?category.name:"",
+        entries:Array.isArray(category.entries)?category.entries.filter(entry=>entry&&typeof entry==="object").map((entry,entryIndex)=>({
+          id:typeof entry.id==="string"&&entry.id?entry.id:`phrase-entry-${Date.now()}-${index}-${entryIndex}`,
+          text:typeof entry.text==="string"?entry.text:""
+        })): []
+      })): [];
+      return {categories};
+    }
     const makeCharacterMap = (name = "แผนผังหลัก", description = "", edges = []) => ({
       id:`map-${Date.now()}-${Math.random().toString(36).slice(2,7)}`,
       name, description, positions:{}, edges
@@ -1584,6 +1660,7 @@
         characterFieldDefinitions:[],
         characterMaps:[makeCharacterMap("แผนผังหลัก","แผนผังความสัมพันธ์ของตัวละคร")],
         worldbuilding:emptyWorldbuilding(),
+        phraseLibrary:emptyPhraseLibrary(),
         maps:emptyMaps(),
         treatment:{...emptyTreatment(),timelines:[timeline],activeTimelineId:timeline.id},
         checklist:emptyChecklist(), chapters:[], checkins:{}
@@ -1669,6 +1746,7 @@
         era:"",
         place:"",
         worldbuilding:normalizeWorldbuilding(novel),
+        phraseLibrary:normalizePhraseLibrary(novel.phraseLibrary),
         characters,
         characterFieldDefinitions,
         characterMaps,
@@ -1750,6 +1828,7 @@
     const workspace = loadWorkspace();
     workspace.assistantChats = {};
     let data = null;
+    let activePhraseCategoryId = null;
     let activeWorldbuildingEntry = null;
     const collapsedWorldbuildingSections = new Set();
     let worldbuildingSectionDrag = null;
@@ -4431,7 +4510,7 @@
       $("#project-nav-label").hidden = !data;
       $("#save-state").hidden = !authenticatedUser;
       $("#crumb-separator").hidden = page === "library";
-      const pageLabels = { overview:"หน้าหลัก", characters:"แผนผังตัวละคร", "character-info":"ข้อมูลตัวละคร", worldbuilding:"สารานุกรม", maps:"แผนที่", treatment:"ทรีตเมนต์", timeline:"ไทม์ไลน์", chapters:"เนื้อหารายตอน", assistant:"ปรึกษานิยาย" };
+      const pageLabels = { overview:"หน้าหลัก", characters:"แผนผังตัวละคร", "character-info":"ข้อมูลตัวละคร", worldbuilding:"สารานุกรม", maps:"แผนที่", treatment:"ทรีตเมนต์", timeline:"ไทม์ไลน์", chapters:"เนื้อหารายตอน", phrases:"คลังสำนวน", assistant:"ปรึกษานิยาย" };
       $("#crumb-page").textContent = page === "library" ? "" : `${data.title || "นิยายไม่มีชื่อ"} / ${pageLabels[page] || ""}`;
       if (page !== "library") {
         syncFields();
@@ -4465,6 +4544,7 @@
         if (page === "treatment") renderTreatment();
         if (page === "timeline") renderTimeline();
         if (page === "chapters") renderChapters();
+        if (page === "phrases") renderPhraseLibrary();
       }
       renderLibrary();
       refreshAllCustomSelects();
@@ -5583,6 +5663,191 @@
         <div class="chapter-editor-footer"><span id="chapter-character-count">${(chapter.content || "").length.toLocaleString("th-TH")} อักขระ</span><button type="button" class="button delete-button" id="delete-chapter">ลบตอนนี้</button></div>` :
         `<div class="empty-note">เพิ่มตอนใหม่เพื่อเริ่มเขียนเนื้อหานิยาย</div>`;
     }
+    function renderPhraseLibrary() {
+      if(!data)return;
+      const categories=data.phraseLibrary.categories;
+      if(!categories.some(category=>category.id===activePhraseCategoryId))activePhraseCategoryId=categories[0]?.id||null;
+      const activeCategory=categories.find(category=>category.id===activePhraseCategoryId)||null;
+      const categorySelect=$("#phrase-category-select");
+      categorySelect.innerHTML=categories.length
+        ?categories.map(category=>`<option value="${escapeHTML(category.id)}">${escapeHTML(category.name||"หมวดที่ยังไม่มีชื่อ")}</option>`).join("")
+        :`<option value="">ยังไม่มีหมวดหมู่</option>`;
+      categorySelect.value=activeCategory?.id||"";
+      categorySelect.disabled=!activeCategory;
+      refreshCustomSelect(categorySelect);
+      const categoryOptions=$("#phrase-category-options");
+      categoryOptions.hidden=!activeCategory;
+      categoryOptions.open=false;
+      const categoryLabel=activeCategory?.name||"หมวดที่ยังไม่มีชื่อ";
+      const categoryMenuTrigger=$("#phrase-category-menu-trigger");
+      categoryMenuTrigger.setAttribute("aria-label",activeCategory?`จัดการหมวด ${categoryLabel}`:"จัดการหมวดสำนวน");
+      categoryMenuTrigger.title=activeCategory?`จัดการหมวด ${categoryLabel}`:"จัดการหมวดสำนวน";
+      $("#rename-phrase-category").dataset.renamePhraseCategory=activeCategory?.id||"";
+      $("#delete-phrase-category").dataset.deletePhraseCategory=activeCategory?.id||"";
+      $("#add-phrase-entry").disabled=!activeCategory;
+      renderPhraseLibraryEntries();
+    }
+    function resizePhraseEntry(textarea) {
+      textarea.style.height="auto";
+      textarea.style.height=`${Math.max(textarea.scrollHeight,40)}px`;
+    }
+    function resizePhraseEntries() {
+      $("#phrase-entry-list").querySelectorAll(".phrase-entry-text").forEach(resizePhraseEntry);
+    }
+    function renderPhraseLibraryEntries() {
+      if(!data)return;
+      const categories=data.phraseLibrary.categories;
+      const query=$("#phrase-search").value.trim().toLocaleLowerCase();
+      const activeCategory=categories.find(category=>category.id===activePhraseCategoryId)||null;
+      if(query){
+        const matches=categories.flatMap(category=>category.entries.map((entry,index)=>({category,entry,index})).filter(({category,entry})=>
+          `${category.name} ${entry.text}`.toLocaleLowerCase().includes(query)
+        ));
+        $("#phrase-search-status").hidden=false;
+        $("#phrase-search-status").textContent=`${matches.length} รายการ`;
+        $("#phrase-entry-list").innerHTML=matches.length?matches.map(({category,entry,index})=>`
+          <article class="phrase-entry-card">
+            <div class="phrase-entry-heading"><span>${escapeHTML(category.name||"หมวดที่ยังไม่มีชื่อ")} · สำนวน ${index+1}</span><button type="button" class="phrase-entry-delete" data-delete-phrase-entry="${escapeHTML(entry.id)}" aria-label="ลบสำนวนที่ ${index+1}">ลบสำนวน</button></div>
+            <textarea class="phrase-entry-text" rows="1" data-phrase-entry="${escapeHTML(entry.id)}" data-phrase-category="${escapeHTML(category.id)}" maxlength="4000" aria-label="ข้อความสำนวนที่ ${index+1}" placeholder="พิมพ์สำนวนหรือข้อความที่อยากเก็บไว้เป็นเรฟ">${escapeHTML(entry.text)}</textarea>
+          </article>`).join(""):`<div class="phrase-empty-state">ไม่พบสำนวนที่ตรงกับ “${escapeHTML(query)}”</div>`;
+        resizePhraseEntries();
+        return;
+      }
+      $("#phrase-search-status").hidden=true;
+      $("#phrase-entry-list").innerHTML=activeCategory
+        ?activeCategory.entries.length?activeCategory.entries.map((entry,index)=>`
+          <article class="phrase-entry-card">
+            <div class="phrase-entry-heading"><span>สำนวน ${index+1}</span><button type="button" class="phrase-entry-delete" data-delete-phrase-entry="${escapeHTML(entry.id)}" aria-label="ลบสำนวนที่ ${index+1}">ลบสำนวน</button></div>
+            <textarea class="phrase-entry-text" rows="1" data-phrase-entry="${escapeHTML(entry.id)}" data-phrase-category="${escapeHTML(activeCategory.id)}" maxlength="4000" aria-label="ข้อความสำนวนที่ ${index+1}" placeholder="พิมพ์สำนวนหรือข้อความที่อยากเก็บไว้เป็นเรฟ">${escapeHTML(entry.text)}</textarea>
+          </article>`).join("")
+        :`<div class="phrase-empty-state">หมวด “${escapeHTML(activeCategory.name||"หมวดที่ยังไม่มีชื่อ")}” ยังไม่มีสำนวน<br>กด “เพิ่มสำนวน” เพื่อเก็บข้อความแรก</div>`
+        :`<div class="phrase-empty-state">เลือกหรือสร้างหมวดหมู่เพื่อดูสำนวนที่บันทึกไว้</div>`;
+      resizePhraseEntries();
+    }
+    const phraseCategoryDialog=$("#phrase-category-dialog");
+    const closePhraseCategoryDialog=()=>phraseCategoryDialog.close();
+    $("#add-phrase-category").addEventListener("click",()=>{
+      $("#phrase-category-form").reset();
+      phraseCategoryDialog.dataset.categoryId="";
+      $("#phrase-category-dialog-title").textContent="เพิ่มหมวดสำนวน";
+      $("#save-phrase-category").textContent="เพิ่มหมวด";
+      phraseCategoryDialog.showModal();
+      $("#phrase-category-name").focus();
+    });
+    $("#close-phrase-category-dialog").addEventListener("click",closePhraseCategoryDialog);
+    $("#cancel-phrase-category-dialog").addEventListener("click",closePhraseCategoryDialog);
+    $("#phrase-category-form").addEventListener("submit",event=>{
+      event.preventDefault();
+      if(!data)return;
+      const name=$("#phrase-category-name").value.trim();
+      if(!name)return;
+      const categoryId=phraseCategoryDialog.dataset.categoryId;
+      const existing=data.phraseLibrary.categories.find(category=>category.id===categoryId);
+      if(existing)existing.name=name;
+      else{
+        const category={id:`phrase-category-${Date.now()}-${Math.random().toString(36).slice(2,7)}`,name,entries:[]};
+        data.phraseLibrary.categories.push(category);
+        activePhraseCategoryId=category.id;
+      }
+      $("#phrase-search").value="";
+      save();
+      closePhraseCategoryDialog();
+      renderPhraseLibrary();
+    });
+    const phraseEntryDialog=$("#phrase-entry-dialog");
+    const phraseEntryText=$("#phrase-entry-text");
+    const closePhraseEntryDialog=()=>phraseEntryDialog.close();
+    $("#add-phrase-entry").addEventListener("click",()=>{
+      if(!data?.phraseLibrary.categories.some(category=>category.id===activePhraseCategoryId))return;
+      $("#phrase-entry-form").reset();
+      resizePhraseEntry(phraseEntryText);
+      phraseEntryDialog.showModal();
+      phraseEntryText.focus();
+    });
+    phraseEntryText.addEventListener("input",()=>resizePhraseEntry(phraseEntryText));
+    $("#close-phrase-entry-dialog").addEventListener("click",closePhraseEntryDialog);
+    $("#cancel-phrase-entry-dialog").addEventListener("click",closePhraseEntryDialog);
+    $("#phrase-entry-form").addEventListener("submit",event=>{
+      event.preventDefault();
+      if(!data)return;
+      const category=data.phraseLibrary.categories.find(item=>item.id===activePhraseCategoryId);
+      const text=$("#phrase-entry-text").value;
+      if(!category||!text.trim())return;
+      const entry={id:`phrase-entry-${Date.now()}-${Math.random().toString(36).slice(2,7)}`,text};
+      category.entries.push(entry);
+      $("#phrase-search").value="";
+      save();
+      closePhraseEntryDialog();
+      renderPhraseLibrary();
+      $(`[data-phrase-entry="${entry.id}"]`)?.focus();
+    });
+    $("#phrase-category-select").addEventListener("change",event=>{
+      const category=data?.phraseLibrary.categories.find(item=>item.id===event.target.value);
+      if(!category)return;
+      activePhraseCategoryId=category.id;
+      $("#phrase-search").value="";
+      renderPhraseLibrary();
+    });
+    $("#phrase-category-control").addEventListener("click",event=>{
+      if(!data)return;
+      const rename=event.target.closest("[data-rename-phrase-category]");
+      if(rename){
+        const category=data.phraseLibrary.categories.find(item=>item.id===rename.dataset.renamePhraseCategory);
+        if(!category)return;
+        rename.closest("details").open=false;
+        phraseCategoryDialog.dataset.categoryId=category.id;
+        $("#phrase-category-dialog-title").textContent="เปลี่ยนชื่อหมวด";
+        $("#save-phrase-category").textContent="บันทึกชื่อ";
+        $("#phrase-category-name").value=category.name;
+        phraseCategoryDialog.showModal();
+        $("#phrase-category-name").focus();
+        return;
+      }
+      const remove=event.target.closest("[data-delete-phrase-category]");
+      if(remove){
+        const category=data.phraseLibrary.categories.find(item=>item.id===remove.dataset.deletePhraseCategory);
+        if(!category)return;
+        remove.closest("details").open=false;
+        requestDeleteConfirmation(`เมื่อลบหมวด “${category.name||"หมวดที่ยังไม่มีชื่อ"}” สำนวน ${category.entries.length} รายการในหมวดนี้จะถูกลบไปด้วย และไม่สามารถกู้คืนได้`,()=>{
+          data.phraseLibrary.categories=data.phraseLibrary.categories.filter(item=>item.id!==category.id);
+          if(activePhraseCategoryId===category.id)activePhraseCategoryId=null;
+          save();
+          renderPhraseLibrary();
+        },"ลบหมวดสำนวน?","ลบหมวดและสำนวน");
+      }
+    });
+    let phraseSearchFrame=0;
+    $("#phrase-search").addEventListener("input",()=>{
+      if(phraseSearchFrame)cancelAnimationFrame(phraseSearchFrame);
+      phraseSearchFrame=requestAnimationFrame(()=>{
+        phraseSearchFrame=0;
+        renderPhraseLibraryEntries();
+      });
+    });
+    $("#phrase-entry-list").addEventListener("input",event=>{
+      const input=event.target.closest("[data-phrase-entry]");
+      if(!(input instanceof HTMLTextAreaElement))return;
+      resizePhraseEntry(input);
+      const category=data?.phraseLibrary.categories.find(item=>item.id===input?.dataset.phraseCategory);
+      const entry=category?.entries.find(item=>item.id===input?.dataset.phraseEntry);
+      if(!entry)return;
+      entry.text=input.value;
+      save(800);
+    });
+    $("#phrase-entry-list").addEventListener("change",event=>{
+      if(event.target.closest("[data-phrase-entry]"))save();
+    });
+    $("#phrase-entry-list").addEventListener("click",event=>{
+      const remove=event.target.closest("[data-delete-phrase-entry]");
+      const category=data?.phraseLibrary.categories.find(item=>item.entries.some(entry=>entry.id===remove?.dataset.deletePhraseEntry));
+      const entry=category?.entries.find(item=>item.id===remove?.dataset.deletePhraseEntry);
+      if(!entry)return;
+      requestDeleteConfirmation("ลบสำนวนนี้ออกจากคลังหรือไม่?",()=>{
+        category.entries=category.entries.filter(item=>item.id!==entry.id);
+        save();
+        renderPhraseLibrary();
+      },"ลบสำนวน?","ลบสำนวน");
+    });
     $("#chapter-list").addEventListener("click", event => {
       const button = event.target.closest("[data-select-chapter]");
       if (!button) return;
