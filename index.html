@@ -912,7 +912,7 @@
       .nav-label { padding:7px 4px 4px; }
       .nav {
         display:flex; width:100%; min-width:0; gap:5px; overflow-x:auto; overscroll-behavior-x:contain;
-        scrollbar-width:thin; padding:0 0 3px;
+        -webkit-overflow-scrolling:touch; scrollbar-width:thin; padding:0 0 3px;
       }
       .nav button,.nav.nested button {
         flex:0 0 auto; width:auto; min-height:36px; justify-content:flex-start; gap:7px; padding:7px 9px;
@@ -1867,6 +1867,8 @@
     let graphDrag = null;
     let graphEdgeDrag = null;
     let graphPanDrag = null;
+    const graphTouchPointers = new Map();
+    let graphPinch = null;
     let ignoreNextGraphClick = false;
     let activeMapPlaceId = null;
     let activeMapObjectIds = new Set();
@@ -4597,8 +4599,11 @@
       nav.addEventListener("pointerdown",event=>{
         const button=event.target.closest("#project-nav button[data-page]");
         if(!button||!event.isPrimary||event.button!==0||activeDrag)return;
-        const drag={button,pointerId:event.pointerId,startX:event.clientX,startY:event.clientY,offsetX:0,offsetY:0,moved:false,timer:null};
+        const sidebar=nav.closest(".sidebar");
+        const scrollContainer=sidebar&&sidebar.scrollHeight>sidebar.clientHeight?sidebar:document.scrollingElement;
+        const drag={button,pointerId:event.pointerId,pointerType:event.pointerType,startX:event.clientX,startY:event.clientY,startScrollLeft:nav.scrollLeft,startScrollTop:scrollContainer?.scrollTop||0,scrollContainer,offsetX:0,offsetY:0,moved:false,scrolling:null,timer:null};
         drag.timer=window.setTimeout(()=>{
+          if(drag.scrolling)return;
           const bounds=button.getBoundingClientRect();
           drag.offsetX=event.clientX-bounds.left;
           drag.offsetY=event.clientY-bounds.top;
@@ -4628,9 +4633,27 @@
         const drag=activeDrag;
         if(!drag||event.pointerId!==drag.pointerId)return;
         if(!drag.started){
-          if(Math.hypot(event.clientX-drag.startX,event.clientY-drag.startY)>8){
+          const dx=event.clientX-drag.startX,dy=event.clientY-drag.startY;
+          if(!drag.scrolling&&drag.pointerType==="touch"&&Math.hypot(dx,dy)>8){
+            if(Math.abs(dx)>=Math.abs(dy)&&nav.scrollWidth>nav.clientWidth)drag.scrolling="horizontal";
+            else if(drag.scrollContainer&&drag.scrollContainer.scrollHeight>drag.scrollContainer.clientHeight)drag.scrolling="vertical";
+            if(drag.scrolling)clearTimeout(drag.timer);
+          }
+          if(drag.scrolling==="horizontal"){
+            nav.scrollLeft=drag.startScrollLeft-dx;
+            event.preventDefault();
+            return;
+          }
+          if(drag.scrolling==="vertical"){
+            drag.scrollContainer.scrollTop=drag.startScrollTop-dy;
+            event.preventDefault();
+            return;
+          }
+          if(Math.hypot(dx,dy)>8){
             clearTimeout(drag.timer);
             activeDrag=null;
+            suppressNextClick=true;
+            window.setTimeout(()=>{suppressNextClick=false;},0);
           }
           return;
         }
@@ -4657,6 +4680,9 @@
           drag.button.classList.remove("is-reordering");
           drag.button.style.cssText="";
           if(drag.moved)saveProjectToolOrder();
+          suppressNextClick=true;
+          window.setTimeout(()=>{suppressNextClick=false;},0);
+        }else if(drag.scrolling){
           suppressNextClick=true;
           window.setTimeout(()=>{suppressNextClick=false;},0);
         }
@@ -6354,6 +6380,36 @@
       $("#connect-characters").classList.remove("active");renderCharacters();fitGraphToBoard();
     });
     $("#character-board").addEventListener("pointerdown", event => {
+      if(event.pointerType==="touch"&&data){
+        graphTouchPointers.set(event.pointerId,{x:event.clientX,y:event.clientY});
+        if(graphPinch)return;
+        if(graphTouchPointers.size===2){
+          event.preventDefault();
+          if(graphEdgeDrag){
+            const edge=currentCharacterMap()?.edges.find(item=>item.id===graphEdgeDrag.id);
+            if(edge)edge.curve=graphEdgeDrag.originalCurve;
+            drawGraphEdges(visibleCharacters());
+          }
+          if(graphDrag){
+            [...$("#character-board").querySelectorAll("[data-graph-node]")].find(item=>item.dataset.graphNode===graphDrag.id)?.classList.remove("dragging");
+          }
+          graphEdgeDrag=null;
+          graphDrag=null;
+          graphPanDrag=null;
+          const [first,second]=[...graphTouchPointers.values()];
+          const rect=$("#character-board").getBoundingClientRect();
+          const centerX=(first.x+second.x)/2-rect.left;
+          const centerY=(first.y+second.y)/2-rect.top;
+          graphPinch={
+            pointerIds:[...graphTouchPointers.keys()],
+            startDistance:Math.max(1,Math.hypot(second.x-first.x,second.y-first.y)),
+            startZoom:graphZoom,
+            worldX:(centerX-graphPan.x)/graphZoom,
+            worldY:(centerY-graphPan.y)/graphZoom
+          };
+          return;
+        }
+      }
       const node = event.target.closest("[data-graph-node]");
       if (!data || connectFromId) return;
       const edgePath=event.target.closest(".graph-edge-hit");
@@ -6398,6 +6454,21 @@
       graphDrag = { id:node.dataset.graphNode, startX:event.clientX, startY:event.clientY, x:point.x, y:point.y, moved:false };
     });
     window.addEventListener("pointermove", event => {
+      if(graphPinch&&graphPinch.pointerIds.includes(event.pointerId)){
+        graphTouchPointers.set(event.pointerId,{x:event.clientX,y:event.clientY});
+        const [firstId,secondId]=graphPinch.pointerIds;
+        const first=graphTouchPointers.get(firstId),second=graphTouchPointers.get(secondId);
+        if(!first||!second)return;
+        const rect=$("#character-board").getBoundingClientRect();
+        const centerX=(first.x+second.x)/2-rect.left;
+        const centerY=(first.y+second.y)/2-rect.top;
+        graphZoom=Math.max(.35,Math.min(2.2,graphPinch.startZoom*Math.hypot(second.x-first.x,second.y-first.y)/graphPinch.startDistance));
+        graphPan={x:centerX-graphPinch.worldX*graphZoom,y:centerY-graphPinch.worldY*graphZoom};
+        event.preventDefault();
+        updateGraphTransform();
+        return;
+      }
+      if(graphTouchPointers.has(event.pointerId))graphTouchPointers.set(event.pointerId,{x:event.clientX,y:event.clientY});
       if(graphEdgeDrag){
         if(!graphEdgeDrag.moved&&Math.hypot(event.clientX-graphEdgeDrag.startX,event.clientY-graphEdgeDrag.startY)<3)return;
         if(!data){graphEdgeDrag=null;return;}
@@ -6414,6 +6485,7 @@
         return;
       }
       if(graphPanDrag){
+        if(graphPanDrag.pointerId!==undefined&&graphPanDrag.pointerId!==event.pointerId)return;
         const dx=event.clientX-graphPanDrag.x,dy=event.clientY-graphPanDrag.y;
         graphPanDrag.moved ||= Math.hypot(dx,dy)>3;
         if(graphPanDrag.moved)event.preventDefault();
@@ -6437,7 +6509,21 @@
       draggedNode.classList.add("dragging");
       drawGraphEdges(visibleCharacters());
     });
-    window.addEventListener("pointerup", () => {
+    window.addEventListener("pointerup", event => {
+      graphTouchPointers.delete(event.pointerId);
+      if(graphPinch&&graphPinch.pointerIds.includes(event.pointerId)){
+        const pinchPointerIds=graphPinch.pointerIds;
+        graphPinch=null;
+        graphPanDrag=null;
+        const remainingId=pinchPointerIds.find(pointerId=>graphTouchPointers.has(pointerId));
+        if(remainingId){
+          const point=graphTouchPointers.get(remainingId);
+          graphPanDrag={x:point.x,y:point.y,panX:graphPan.x,panY:graphPan.y,moved:false,pointerId:remainingId};
+        }
+        ignoreNextGraphClick=true;
+        window.setTimeout(()=>{ignoreNextGraphClick=false;},100);
+        return;
+      }
       if(graphEdgeDrag){
         const drag=graphEdgeDrag;
         graphEdgeDrag=null;
@@ -6464,7 +6550,17 @@
       }
       if(drag.moved)window.setTimeout(()=>{graphDrag=null;},0);
     });
-    window.addEventListener("pointercancel", () => {
+    window.addEventListener("pointercancel", event => {
+      graphTouchPointers.delete(event.pointerId);
+      if(graphPinch&&graphPinch.pointerIds.includes(event.pointerId)){
+        graphPinch=null;
+        graphPanDrag=null;
+        graphDrag=null;
+        graphEdgeDrag=null;
+        ignoreNextGraphClick=true;
+        window.setTimeout(()=>{ignoreNextGraphClick=false;},100);
+        return;
+      }
       if(graphEdgeDrag){
         const drag=graphEdgeDrag;
         graphEdgeDrag=null;
