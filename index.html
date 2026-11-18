@@ -1852,6 +1852,10 @@
     let phraseSearchCacheQuery = null;
     let phraseSearchMatches = [];
     let phraseSearchVisibleCount = 40;
+    let phraseRenderedEntryIds = new Set();
+    let phraseRenderGeneration = 0;
+    let phraseRenderTask = 0;
+    let phraseRenderTaskIsIdle = false;
     let phraseSearchTimer = 0;
     let activeWorldbuildingEntry = null;
     const collapsedWorldbuildingSections = new Set();
@@ -4523,6 +4527,7 @@
     }
     function showPage(page) {
       if (page !== "library" && !data) page = "library";
+      if(page!=="phrases")cancelPhraseRenderQueue();
       $(".app").classList.toggle("assistant-mode",page==="assistant");
       $("#assistant-widget").hidden=!data;
       if(!data){
@@ -5716,7 +5721,6 @@
     function renderPhraseLibrary() {
       if(!data)return;
       phraseSearchCacheQuery=null;
-      phraseSearchVisibleCount=40;
       const categories=data.phraseLibrary.categories;
       if(!categories.some(category=>category.id===activePhraseCategoryId))activePhraseCategoryId=categories[0]?.id||null;
       const activeCategory=categories.find(category=>category.id===activePhraseCategoryId)||null;
@@ -5744,45 +5748,94 @@
       textarea.style.height="auto";
       textarea.style.height=`${Math.max(textarea.scrollHeight,40)}px`;
     }
-    function resizePhraseEntries() {
-      $("#phrase-entry-list").querySelectorAll(".phrase-entry-text").forEach(resizePhraseEntry);
+    function resizePhraseEntries(root=$("#phrase-entry-list")) {
+      root.querySelectorAll(".phrase-entry-text").forEach(resizePhraseEntry);
     }
-    function renderPhraseLibraryEntries() {
-      if(!data)return;
-      const categories=data.phraseLibrary.categories;
-      const query=$("#phrase-search").value.trim().toLocaleLowerCase();
-      const activeCategory=categories.find(category=>category.id===activePhraseCategoryId)||null;
+    function cancelPhraseRenderQueue() {
+      phraseRenderGeneration++;
+      if(!phraseRenderTask)return;
+      if(phraseRenderTaskIsIdle&&typeof window.cancelIdleCallback==="function")window.cancelIdleCallback(phraseRenderTask);
+      else window.clearTimeout(phraseRenderTask);
+      phraseRenderTask=0;
+    }
+    function schedulePhraseRender(generation) {
+      if(phraseRenderTask)return;
+      const renderNextBatch=()=>{
+        phraseRenderTask=0;
+        if(generation!==phraseRenderGeneration)return;
+        renderPhraseLibraryEntries(false);
+      };
+      if(typeof window.requestIdleCallback==="function"){
+        phraseRenderTaskIsIdle=true;
+        phraseRenderTask=window.requestIdleCallback(renderNextBatch,{timeout:250});
+      }else{
+        phraseRenderTaskIsIdle=false;
+        phraseRenderTask=window.setTimeout(renderNextBatch,50);
+      }
+    }
+    function phraseEntryCardHTML(category,entry,index,showCategory) {
+      return `<article class="phrase-entry-card">
+        <div class="phrase-entry-heading"><span>${showCategory?`${escapeHTML(category.name||"หมวดที่ยังไม่มีชื่อ")} · `:""}สำนวน ${index+1}</span><input type="text" class="phrase-entry-tags" data-phrase-entry-tags="${escapeHTML(entry.id)}" data-phrase-category="${escapeHTML(category.id)}" maxlength="300" aria-label="แท็กสำนวนที่ ${index+1}" placeholder="แท็ก" value="${escapeHTML((entry.tags||[]).join(", "))}"><button type="button" class="phrase-entry-delete" data-delete-phrase-entry="${escapeHTML(entry.id)}" aria-label="ลบสำนวนที่ ${index+1}">ลบสำนวน</button></div>
+        <textarea class="phrase-entry-text" rows="1" data-phrase-entry="${escapeHTML(entry.id)}" data-phrase-category="${escapeHTML(category.id)}" maxlength="4000" aria-label="ข้อความสำนวนที่ ${index+1}" placeholder="พิมพ์สำนวนหรือข้อความที่อยากเก็บไว้เป็นเรฟ">${escapeHTML(entry.text)}</textarea>
+      </article>`;
+    }
+    function phraseEntriesForCurrentView(query,categories,activeCategory) {
       if(query){
         if(phraseSearchCacheQuery!==query){
           phraseSearchCacheQuery=query;
-          phraseSearchVisibleCount=40;
           phraseSearchMatches=categories.flatMap(category=>category.entries.map((entry,index)=>({category,entry,index})).filter(({category,entry})=>
             `${category.name} ${entry.text} ${(entry.tags||[]).join(" ")}`.toLocaleLowerCase().includes(query)
           ));
         }
-        const matches=phraseSearchMatches;
-        $("#phrase-search-status").hidden=false;
-        $("#phrase-search-status").textContent=`${matches.length} รายการ`;
-        $("#phrase-entry-list").innerHTML=matches.length?matches.slice(0,phraseSearchVisibleCount).map(({category,entry,index})=>`
-          <article class="phrase-entry-card">
-            <div class="phrase-entry-heading"><span>${escapeHTML(category.name||"หมวดที่ยังไม่มีชื่อ")} · สำนวน ${index+1}</span><input type="text" class="phrase-entry-tags" data-phrase-entry-tags="${escapeHTML(entry.id)}" data-phrase-category="${escapeHTML(category.id)}" maxlength="300" aria-label="แท็กสำนวนที่ ${index+1}" placeholder="แท็ก" value="${escapeHTML((entry.tags||[]).join(", "))}"><button type="button" class="phrase-entry-delete" data-delete-phrase-entry="${escapeHTML(entry.id)}" aria-label="ลบสำนวนที่ ${index+1}">ลบสำนวน</button></div>
-            <textarea class="phrase-entry-text" rows="1" data-phrase-entry="${escapeHTML(entry.id)}" data-phrase-category="${escapeHTML(category.id)}" maxlength="4000" aria-label="ข้อความสำนวนที่ ${index+1}" placeholder="พิมพ์สำนวนหรือข้อความที่อยากเก็บไว้เป็นเรฟ">${escapeHTML(entry.text)}</textarea>
-          </article>`).join("")+(matches.length>phraseSearchVisibleCount?`<button type="button" class="button" data-phrase-search-more>แสดงเพิ่ม ${Math.min(40,matches.length-phraseSearchVisibleCount)} รายการ (${phraseSearchVisibleCount}/${matches.length})</button>`:""):`<div class="phrase-empty-state">ไม่พบสำนวนที่ตรงกับ “${escapeHTML(query)}”</div>`;
-        resizePhraseEntries();
-        return;
+        return phraseSearchMatches;
       }
       phraseSearchCacheQuery=null;
-      phraseSearchVisibleCount=40;
-      $("#phrase-search-status").hidden=true;
-      $("#phrase-entry-list").innerHTML=activeCategory
-        ?activeCategory.entries.length?activeCategory.entries.map((entry,index)=>`
-          <article class="phrase-entry-card">
-            <div class="phrase-entry-heading"><span>สำนวน ${index+1}</span><input type="text" class="phrase-entry-tags" data-phrase-entry-tags="${escapeHTML(entry.id)}" data-phrase-category="${escapeHTML(activeCategory.id)}" maxlength="300" aria-label="แท็กสำนวนที่ ${index+1}" placeholder="แท็ก" value="${escapeHTML((entry.tags||[]).join(", "))}"><button type="button" class="phrase-entry-delete" data-delete-phrase-entry="${escapeHTML(entry.id)}" aria-label="ลบสำนวนที่ ${index+1}">ลบสำนวน</button></div>
-            <textarea class="phrase-entry-text" rows="1" data-phrase-entry="${escapeHTML(entry.id)}" data-phrase-category="${escapeHTML(activeCategory.id)}" maxlength="4000" aria-label="ข้อความสำนวนที่ ${index+1}" placeholder="พิมพ์สำนวนหรือข้อความที่อยากเก็บไว้เป็นเรฟ">${escapeHTML(entry.text)}</textarea>
-          </article>`).join("")
-        :`<div class="phrase-empty-state">หมวด “${escapeHTML(activeCategory.name||"หมวดที่ยังไม่มีชื่อ")}” ยังไม่มีสำนวน<br>กด “เพิ่มสำนวน” เพื่อเก็บข้อความแรก</div>`
-        :`<div class="phrase-empty-state">เลือกหรือสร้างหมวดหมู่เพื่อดูสำนวนที่บันทึกไว้</div>`;
-      resizePhraseEntries();
+      return activeCategory?activeCategory.entries.map((entry,index)=>({category:activeCategory,entry,index})):null;
+    }
+    function renderPhraseLibraryEntries(reset=true) {
+      if(!data)return;
+      const categories=data.phraseLibrary.categories;
+      const query=$("#phrase-search").value.trim().toLocaleLowerCase();
+      const activeCategory=categories.find(category=>category.id===activePhraseCategoryId)||null;
+      const list=$("#phrase-entry-list");
+      const status=$("#phrase-search-status");
+      const entries=phraseEntriesForCurrentView(query,categories,activeCategory);
+      if(query){
+        status.hidden=false;
+        status.textContent=`${entries.length} รายการ`;
+      }else status.hidden=true;
+      if(reset){
+        cancelPhraseRenderQueue();
+        phraseSearchVisibleCount=0;
+        phraseRenderedEntryIds=new Set();
+        list.replaceChildren();
+      }
+      if(!entries){
+        if(reset)list.innerHTML=`<div class="phrase-empty-state">เลือกหรือสร้างหมวดหมู่เพื่อดูสำนวนที่บันทึกไว้</div>`;
+        return;
+      }
+      if(!entries.length){
+        if(reset)list.innerHTML=query
+          ?`<div class="phrase-empty-state">ไม่พบสำนวนที่ตรงกับ “${escapeHTML(query)}”</div>`
+          :`<div class="phrase-empty-state">หมวด “${escapeHTML(activeCategory.name||"หมวดที่ยังไม่มีชื่อ")}” ยังไม่มีสำนวน<br>กด “เพิ่มสำนวน” เพื่อเก็บข้อความแรก</div>`;
+        return;
+      }
+      const start=phraseSearchVisibleCount;
+      const end=Math.min(start+(reset?40:20),entries.length);
+      const batch=entries.slice(start,end).filter(({entry})=>!phraseRenderedEntryIds.has(entry.id));
+      if(batch.length){
+        const wrapper=document.createElement("div");
+        wrapper.innerHTML=batch.map(({category,entry,index})=>phraseEntryCardHTML(category,entry,index,Boolean(query))).join("");
+        const cards=[...wrapper.children];
+        const fragment=document.createDocumentFragment();
+        cards.forEach(card=>fragment.append(card));
+        const pending=list.querySelector("[data-phrase-entry-pending]");
+        list.insertBefore(fragment,pending||null);
+        batch.forEach(({entry})=>phraseRenderedEntryIds.add(entry.id));
+        cards.forEach(resizePhraseEntries);
+      }
+      phraseSearchVisibleCount=end;
+      if(end<entries.length)schedulePhraseRender(phraseRenderGeneration);
     }
     const phraseCategoryDialog=$("#phrase-category-dialog");
     const closePhraseCategoryDialog=()=>phraseCategoryDialog.close();
@@ -5836,12 +5889,28 @@
       const text=$("#phrase-entry-text").value;
       const tags=parsePhraseTags($("#phrase-entry-tags").value);
       if(!category||!text.trim())return;
+      const wasSearching=Boolean($("#phrase-search").value.trim());
       const entry={id:`phrase-entry-${Date.now()}-${Math.random().toString(36).slice(2,7)}`,text,tags};
       category.entries.push(entry);
       $("#phrase-search").value="";
+      phraseSearchCacheQuery=null;
       save();
       closePhraseEntryDialog();
-      renderPhraseLibrary();
+      if(wasSearching)renderPhraseLibrary();
+      if(!phraseRenderedEntryIds.has(entry.id)){
+        const entryHTML=phraseEntryCardHTML(category,entry,category.entries.length-1,false);
+        const wrapper=document.createElement("div");
+        wrapper.innerHTML=entryHTML;
+        const card=wrapper.firstElementChild;
+        card.dataset.phraseEntryPending="";
+        $("#phrase-entry-list").querySelector(".phrase-empty-state")?.remove();
+        const list=$("#phrase-entry-list");
+        const pending=list.querySelector("[data-phrase-entry-pending]");
+        list.insertBefore(card,pending||null);
+        phraseRenderedEntryIds.add(entry.id);
+        resizePhraseEntries(card);
+        if(phraseSearchVisibleCount<category.entries.length)schedulePhraseRender(phraseRenderGeneration);
+      }
       $(`[data-phrase-entry="${entry.id}"]`)?.focus();
     });
     $("#phrase-category-select").addEventListener("change",event=>{
@@ -5883,6 +5952,7 @@
     $("#phrase-search").addEventListener("input",()=>{
       if(phraseSearchFrame)cancelAnimationFrame(phraseSearchFrame);
       window.clearTimeout(phraseSearchTimer);
+      cancelPhraseRenderQueue();
       phraseSearchTimer=window.setTimeout(()=>{
         phraseSearchFrame=requestAnimationFrame(()=>{
           phraseSearchFrame=0;
@@ -5915,11 +5985,6 @@
       if(event.target.closest("[data-phrase-entry],[data-phrase-entry-tags]"))save();
     });
     $("#phrase-entry-list").addEventListener("click",event=>{
-      if(event.target.closest("[data-phrase-search-more]")){
-        phraseSearchVisibleCount+=40;
-        renderPhraseLibraryEntries();
-        return;
-      }
       const remove=event.target.closest("[data-delete-phrase-entry]");
       const category=data?.phraseLibrary.categories.find(item=>item.entries.some(entry=>entry.id===remove?.dataset.deletePhraseEntry));
       const entry=category?.entries.find(item=>item.id===remove?.dataset.deletePhraseEntry);
