@@ -1849,6 +1849,10 @@
     workspace.assistantChats = {};
     let data = null;
     let activePhraseCategoryId = null;
+    let phraseSearchCacheQuery = null;
+    let phraseSearchMatches = [];
+    let phraseSearchVisibleCount = 40;
+    let phraseSearchTimer = 0;
     let activeWorldbuildingEntry = null;
     const collapsedWorldbuildingSections = new Set();
     let worldbuildingSectionDrag = null;
@@ -5711,6 +5715,8 @@
     }
     function renderPhraseLibrary() {
       if(!data)return;
+      phraseSearchCacheQuery=null;
+      phraseSearchVisibleCount=40;
       const categories=data.phraseLibrary.categories;
       if(!categories.some(category=>category.id===activePhraseCategoryId))activePhraseCategoryId=categories[0]?.id||null;
       const activeCategory=categories.find(category=>category.id===activePhraseCategoryId)||null;
@@ -5747,19 +5753,26 @@
       const query=$("#phrase-search").value.trim().toLocaleLowerCase();
       const activeCategory=categories.find(category=>category.id===activePhraseCategoryId)||null;
       if(query){
-        const matches=categories.flatMap(category=>category.entries.map((entry,index)=>({category,entry,index})).filter(({category,entry})=>
-          `${category.name} ${entry.text} ${(entry.tags||[]).join(" ")}`.toLocaleLowerCase().includes(query)
-        ));
+        if(phraseSearchCacheQuery!==query){
+          phraseSearchCacheQuery=query;
+          phraseSearchVisibleCount=40;
+          phraseSearchMatches=categories.flatMap(category=>category.entries.map((entry,index)=>({category,entry,index})).filter(({category,entry})=>
+            `${category.name} ${entry.text} ${(entry.tags||[]).join(" ")}`.toLocaleLowerCase().includes(query)
+          ));
+        }
+        const matches=phraseSearchMatches;
         $("#phrase-search-status").hidden=false;
         $("#phrase-search-status").textContent=`${matches.length} รายการ`;
-        $("#phrase-entry-list").innerHTML=matches.length?matches.map(({category,entry,index})=>`
+        $("#phrase-entry-list").innerHTML=matches.length?matches.slice(0,phraseSearchVisibleCount).map(({category,entry,index})=>`
           <article class="phrase-entry-card">
             <div class="phrase-entry-heading"><span>${escapeHTML(category.name||"หมวดที่ยังไม่มีชื่อ")} · สำนวน ${index+1}</span><input type="text" class="phrase-entry-tags" data-phrase-entry-tags="${escapeHTML(entry.id)}" data-phrase-category="${escapeHTML(category.id)}" maxlength="300" aria-label="แท็กสำนวนที่ ${index+1}" placeholder="แท็ก" value="${escapeHTML((entry.tags||[]).join(", "))}"><button type="button" class="phrase-entry-delete" data-delete-phrase-entry="${escapeHTML(entry.id)}" aria-label="ลบสำนวนที่ ${index+1}">ลบสำนวน</button></div>
             <textarea class="phrase-entry-text" rows="1" data-phrase-entry="${escapeHTML(entry.id)}" data-phrase-category="${escapeHTML(category.id)}" maxlength="4000" aria-label="ข้อความสำนวนที่ ${index+1}" placeholder="พิมพ์สำนวนหรือข้อความที่อยากเก็บไว้เป็นเรฟ">${escapeHTML(entry.text)}</textarea>
-          </article>`).join(""):`<div class="phrase-empty-state">ไม่พบสำนวนที่ตรงกับ “${escapeHTML(query)}”</div>`;
+          </article>`).join("")+(matches.length>phraseSearchVisibleCount?`<button type="button" class="button" data-phrase-search-more>แสดงเพิ่ม ${Math.min(40,matches.length-phraseSearchVisibleCount)} รายการ (${phraseSearchVisibleCount}/${matches.length})</button>`:""):`<div class="phrase-empty-state">ไม่พบสำนวนที่ตรงกับ “${escapeHTML(query)}”</div>`;
         resizePhraseEntries();
         return;
       }
+      phraseSearchCacheQuery=null;
+      phraseSearchVisibleCount=40;
       $("#phrase-search-status").hidden=true;
       $("#phrase-entry-list").innerHTML=activeCategory
         ?activeCategory.entries.length?activeCategory.entries.map((entry,index)=>`
@@ -5869,10 +5882,13 @@
     let phraseSearchFrame=0;
     $("#phrase-search").addEventListener("input",()=>{
       if(phraseSearchFrame)cancelAnimationFrame(phraseSearchFrame);
-      phraseSearchFrame=requestAnimationFrame(()=>{
-        phraseSearchFrame=0;
-        renderPhraseLibraryEntries();
-      });
+      window.clearTimeout(phraseSearchTimer);
+      phraseSearchTimer=window.setTimeout(()=>{
+        phraseSearchFrame=requestAnimationFrame(()=>{
+          phraseSearchFrame=0;
+          renderPhraseLibraryEntries();
+        });
+      },160);
     });
     $("#phrase-entry-list").addEventListener("input",event=>{
       const tagsInput=event.target.closest("[data-phrase-entry-tags]");
@@ -5881,6 +5897,7 @@
         const entry=category?.entries.find(item=>item.id===tagsInput.dataset.phraseEntryTags);
         if(!entry)return;
         entry.tags=parsePhraseTags(tagsInput.value);
+        phraseSearchCacheQuery=null;
         save(800);
         return;
       }
@@ -5891,12 +5908,18 @@
       const entry=category?.entries.find(item=>item.id===input?.dataset.phraseEntry);
       if(!entry)return;
       entry.text=input.value;
+      phraseSearchCacheQuery=null;
       save(800);
     });
     $("#phrase-entry-list").addEventListener("change",event=>{
       if(event.target.closest("[data-phrase-entry],[data-phrase-entry-tags]"))save();
     });
     $("#phrase-entry-list").addEventListener("click",event=>{
+      if(event.target.closest("[data-phrase-search-more]")){
+        phraseSearchVisibleCount+=40;
+        renderPhraseLibraryEntries();
+        return;
+      }
       const remove=event.target.closest("[data-delete-phrase-entry]");
       const category=data?.phraseLibrary.categories.find(item=>item.entries.some(entry=>entry.id===remove?.dataset.deletePhraseEntry));
       const entry=category?.entries.find(item=>item.id===remove?.dataset.deletePhraseEntry);
